@@ -10,7 +10,7 @@ buildscript {
 	dependencies {
 		classpath "com.github.jengelman.gradle.plugins:shadow:6.0.0"
 		classpath "com.bertramlabs.plugins:asset-pipeline-gradle:$assetPipelineVersion"
-		classpath "com.morpheusdata:morpheus-scribe-gradle:0.14.1-SNAPSHOT"
+		// classpath "com.morpheusdata:morpheus-scribe-gradle:0.14.1-SNAPSHOT"
 	}
 }
 
@@ -19,7 +19,7 @@ apply plugin: 'groovy'
 apply plugin: 'idea'
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'asset-pipeline'
-apply plugin: 'morpheus-scribe-gradle'
+// apply plugin: 'morpheus-scribe-gradle'
 
 group 'com.morpheusdata.bigip'
 ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
@@ -77,11 +77,11 @@ jar {
 			'Morpheus-Code': 'morpheus-bigip-plugin',
 			'Morpheus-Description': 'Plugin for F5 BigIpn',
 			'Morpheus-Logo': 'assets/bigip.svg',
-			'Morpheus-Logo-Dark': 'assets/bigip.svg',
+			'Morpheus-Logo-Dark': 'assets/bigip-dark-mode.svg',
 			'Morpheus-Color': '#ffffff',
 			'Morpheus-Labels': 'Plugin, loadbalancer',
 			'Morpheus-Repo': 'https://github.com/gomorpheus/morpheus-bigip-loadbalancer-plugin',
-			'Morpheus-Min-Appliance-Version': "6.0.2"
+			'Morpheus-Min-Appliance-Version': "6.0.3"
 		)
 	}
 }

@@ -93,7 +93,7 @@ class BigIpProvider implements LoadBalancerProvider {
 
 	@Override
 	Icon getIcon() {
-		return null
+		return new Icon(path:"bigip.svg", darkPath: "bigip-dark-mode.svg")
 	}
 
 	/**
