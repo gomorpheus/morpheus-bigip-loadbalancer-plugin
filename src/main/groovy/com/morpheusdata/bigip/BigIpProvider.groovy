@@ -1013,6 +1013,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			createPools:true,
 			nameEditable: true,
 			createPricePlans: true,
+			profileSupportsProxy:true,
 			optionTypes:getOptionTypes(),
 			policyOptionTypes:getPolicyOptionTypes(),
 			policyRuleOptionTypes:getPolicyRuleOptionTypes(),
@@ -1436,7 +1437,7 @@ class BigIpProvider implements LoadBalancerProvider {
 				def profileResponse = createProfile(apiConfig + createParams)
 				createRtn.success = profileResponse.success
 				createRtn.msg = profileResponse.content?.message
-				createRtn.data = [category:"f5.profile.${loadBalancerProfile.loadBalancerId}"]
+				createRtn.data = [category:"f5.profile.${loadBalancerProfile.loadBalancer.id}"]
 			}
 
 			return createRtn
@@ -1465,7 +1466,7 @@ class BigIpProvider implements LoadBalancerProvider {
 		}
 		catch(Throwable t) {
 			log.error("error removing profile: ${t.message}", t)
-			rtn.msg = 'unknown error removing profile ' + e.message
+			rtn.msg = 'unknown error removing profile ' + t.message
 		}
 		log.debug("rtn: ${rtn}")
 		return rtn

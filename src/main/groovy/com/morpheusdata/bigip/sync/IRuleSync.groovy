@@ -54,6 +54,7 @@ class IRuleSync extends BigIPEntitySync {
 					add.setConfigMap(script)
 					adds << add
 				}
+				svc.create(adds).blockingGet()
 			}.onUpdate { List<SyncTask.UpdateItem<NetworkLoadBalancerScript, Map>> updateItems ->
 				// NOT IMPLEMENTED
 				log.info ("Sync updates not implemented for iRule sync")
