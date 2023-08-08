@@ -694,7 +694,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			optionSource:'bigIpPluginVirtualServerTypes'
 		)
 		virtualServerOptions << new OptionType(
-			name:'vipAddress',
+			name:'vipHostname',
 			code:'plugin.bigip.virtualService.vipHostname',
 			fieldName:'vipHostname',
 			fieldContext:'domain',
@@ -2527,7 +2527,10 @@ class BigIpProvider implements LoadBalancerProvider {
 				opts.activeConfig.loadBalancerInstance = instance
 				def removeResults = removeInstance(opts.activeConfig, instance.instance)
 				if(removeResults.success == true) {
-					def addResults = addInstance(instance, opts)
+					def configMap = instance.configMap
+					configMap.options = opts
+					instance.setConfigMap(configMap)
+					def addResults = addInstance(instance)
 					rtn.success = removeResults.success
 				}
 			} else if(changeResults.addNodes == true) {
@@ -2665,8 +2668,9 @@ class BigIpProvider implements LoadBalancerProvider {
 	def removeInstance(Map instanceConfig, Instance instance) {
 		def rtn = [success:false, deleted:false]
 		try {
-			def loadBalancer = instanceConfig.loadBalancer
 			def lbSvc = morpheus.loadBalancer
+			def loadBalancer =
+				instanceConfig.loadBalancerInstance?.loadBalancer ?: lbSvc.getLoadBalancerById(instanceConfig.loadBalancer.id).blockingGet()
 			log.info("Removing VIP from LoadBalancer: {}", instanceConfig.loadBalancer?.name)
 			//vip details
 			def vipAddress = instanceConfig.vipAddress
