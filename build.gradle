@@ -75,13 +75,13 @@ jar {
 			'Morpheus-Name': 'BigIP',
 			'Morpheus-Organization': 'morpheus',
 			'Morpheus-Code': 'morpheus-bigip-plugin',
-			'Morpheus-Description': 'Plugin for F5 BigIpn',
+			'Morpheus-Description': 'Plugin for F5 BigIp',
 			'Morpheus-Logo': 'assets/bigip.svg',
 			'Morpheus-Logo-Dark': 'assets/bigip-dark-mode.svg',
 			'Morpheus-Color': '#ffffff',
 			'Morpheus-Labels': 'Plugin, loadbalancer',
 			'Morpheus-Repo': 'https://github.com/gomorpheus/morpheus-bigip-loadbalancer-plugin',
-			'Morpheus-Min-Appliance-Version': "6.0.3"
+			'Morpheus-Min-Appliance-Version': "6.2.1"
 		)
 	}
 }
