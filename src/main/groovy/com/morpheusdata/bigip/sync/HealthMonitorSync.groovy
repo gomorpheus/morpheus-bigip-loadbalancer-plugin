@@ -27,7 +27,7 @@ class HealthMonitorSync extends BigIPEntitySync {
 
 		try {
 			// get the load balancer health monitor service to interact with database
-			def svc = morpheusContext.loadBalancer.monitor
+			def svc = morpheusContext.async.loadBalancer.monitor
 
 			// grab master items from the bigip api
 			def apiItems = plugin.provider.listHealthMonitors(loadBalancer)
@@ -67,7 +67,7 @@ class HealthMonitorSync extends BigIPEntitySync {
 					add.setConfigMap(monitor)
 					adds << add
 				}
-				svc.create(adds).blockingGet()
+				svc.bulkCreate(adds).blockingGet()
 			}.onUpdate { List<SyncTask.UpdateItem<NetworkLoadBalancerMonitor, Map>> updateItems ->
 				List<NetworkLoadBalancerMonitor> itemsToUpdate = new ArrayList<NetworkLoadBalancerMonitor>()
 				for (update in updateItems) {
@@ -93,9 +93,9 @@ class HealthMonitorSync extends BigIPEntitySync {
 					if (doUpdate)
 						itemsToUpdate << existingMonitor
 				}
-				svc.save(itemsToUpdate).blockingGet()
+				svc.bulkSave(itemsToUpdate).blockingGet()
 			}.onDelete { List<LoadBalancerMonitorIdentityProjection> monitors ->
-				svc.remove(monitors).blockingGet()
+				svc.bulkRemove(monitors).blockingGet()
 			}.start()
 			log.info('bigip health monitor sync complete')
 		}

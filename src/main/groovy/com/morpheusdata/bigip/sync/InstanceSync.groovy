@@ -8,6 +8,7 @@ import com.morpheusdata.model.NetworkLoadBalancerInstance
 import com.morpheusdata.model.NetworkLoadBalancerPolicy
 import com.morpheusdata.model.NetworkLoadBalancerProfile
 import com.morpheusdata.model.NetworkLoadBalancerRule
+import com.morpheusdata.model.ReferenceData
 import com.morpheusdata.model.projection.LoadBalancerInstanceIdentityProjection
 import com.morpheusdata.model.projection.LoadBalancerPolicyIdentityProjection
 import groovy.util.logging.Slf4j
@@ -122,6 +123,8 @@ class InstanceSync extends BigIPEntitySync {
 		)
 		syncTask.addMatchFunction { NetworkLoadBalancerProfile existingItem, Map syncItem ->
 			return existingItem.externalId == syncItem.fullPath
+		}.withLoadObjectDetails { List<SyncTask.UpdateItemDto<NetworkLoadBalancerProfile, Map>> updateItems ->
+			return Observable.fromIterable(updateItems.collect { item -> item.existingItem })
 		}.onError { exception ->
 			log.error("Failed to syn virtual server profiles for ${existingVip.vipName}: ${exception.message}", exception)
 		}.onAdd { addItems ->
@@ -132,6 +135,8 @@ class InstanceSync extends BigIPEntitySync {
 					doUpdate = true
 				}
 			}
+		}.onUpdate { List<SyncTask.UpdateItem<NetworkLoadBalancerProfile, Map>> updateItems ->
+			// NOTE: no need to update the profiles themselves, only add or remove from the virtual server
 		}.onDelete { removeItems ->
 			def removeIds = removeItems.collect { return it.externalId }
 			existingVip.profiles?.removeAll { profile ->
@@ -158,6 +163,8 @@ class InstanceSync extends BigIPEntitySync {
 		)
 		syncTask.addMatchFunction { NetworkLoadBalancerPolicy existingItem, Map sourceItem ->
 			return existingItem.externalId == sourceItem.fullPath
+		}.withLoadObjectDetails { List<SyncTask.UpdateItemDto<NetworkLoadBalancerPolicy, Map>> updateItems ->
+			return Observable.fromIterable(updateItems.collect { item -> item.existingItem })
 		}.onAdd { addItems ->
 			for (item in addItems) {
 				def policy = policySvc.findByExternalIdAndLoadBalancer(item.fullPath, loadBalancer).blockingGet()
@@ -166,6 +173,8 @@ class InstanceSync extends BigIPEntitySync {
 					doUpdate = true
 				}
 			}
+		}.onUpdate { List<SyncTask.UpdateItem<NetworkLoadBalancerPolicy, Map>> updateItems ->
+			// NOTE: no need to update policies themselves, only add/remove from the virtual server
 		}.onDelete { removeItems ->
 			def removeIds = removeItems.collect { return it.externalId }
 			existingVip.policies?.removeAll { policy ->
