@@ -10,7 +10,7 @@ import com.morpheusdata.model.ReferenceData
 import com.morpheusdata.model.projection.NetworkIdentityProjection
 import com.morpheusdata.model.projection.ReferenceDataSyncProjection
 import groovy.util.logging.Slf4j
-import io.reactivex.*
+import io.reactivex.rxjava3.core.*
 
 @Slf4j
 class PartitionSync extends BigIPEntitySync {

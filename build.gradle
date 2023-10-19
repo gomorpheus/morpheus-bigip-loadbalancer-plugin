@@ -50,7 +50,7 @@ dependencies {
 
 	// Include morpheus-core and it's dependencies
 	testImplementation "com.morpheusdata:morpheus-plugin-api:$morphPluginApiVersion"
-	testImplementation 'io.reactivex.rxjava2:rxjava:2.2.0'
+	testImplementation 'io.reactivex.rxjava3:rxjava:3.1.8'
 	testImplementation "org.slf4j:slf4j-nop:$slf4jVersion"
 	testImplementation "org.slf4j:slf4j-parent:$slf4jVersion"
 
@@ -81,7 +81,7 @@ jar {
 			'Morpheus-Color': '#ffffff',
 			'Morpheus-Labels': 'Plugin, loadbalancer',
 			'Morpheus-Repo': 'https://github.com/gomorpheus/morpheus-bigip-loadbalancer-plugin',
-			'Morpheus-Min-Appliance-Version': "6.2.3"
+			'Morpheus-Min-Appliance-Version': minversion
 		)
 	}
 }

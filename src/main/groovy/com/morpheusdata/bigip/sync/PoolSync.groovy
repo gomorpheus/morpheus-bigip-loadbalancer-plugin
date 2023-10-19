@@ -9,7 +9,7 @@ import com.morpheusdata.model.NetworkLoadBalancerMember
 import com.morpheusdata.model.NetworkLoadBalancerPool
 import com.morpheusdata.model.projection.LoadBalancerPoolIdentityProjection
 import groovy.util.logging.Slf4j
-import io.reactivex.Observable
+import io.reactivex.rxjava3.core.Observable
 
 @Slf4j
 class PoolSync extends BigIPEntitySync {

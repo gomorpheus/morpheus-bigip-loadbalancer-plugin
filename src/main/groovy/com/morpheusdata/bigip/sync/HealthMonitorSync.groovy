@@ -8,7 +8,7 @@ import com.morpheusdata.model.NetworkLoadBalancer
 import com.morpheusdata.model.NetworkLoadBalancerMonitor
 import com.morpheusdata.model.projection.LoadBalancerMonitorIdentityProjection
 import groovy.util.logging.Slf4j
-import io.reactivex.Observable
+import io.reactivex.rxjava3.core.Observable
 
 @Slf4j
 class HealthMonitorSync extends BigIPEntitySync {

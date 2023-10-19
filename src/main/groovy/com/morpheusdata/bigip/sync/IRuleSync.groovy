@@ -8,7 +8,7 @@ import com.morpheusdata.model.NetworkLoadBalancerProfile
 import com.morpheusdata.model.NetworkLoadBalancerScript
 import com.morpheusdata.model.projection.LoadBalancerScriptIdentityProjection
 import groovy.util.logging.Slf4j
-import io.reactivex.Observable
+import io.reactivex.rxjava3.core.Observable
 
 @Slf4j
 class IRuleSync extends BigIPEntitySync {

@@ -12,7 +12,7 @@ import com.morpheusdata.model.ReferenceData
 import com.morpheusdata.model.projection.LoadBalancerInstanceIdentityProjection
 import com.morpheusdata.model.projection.LoadBalancerPolicyIdentityProjection
 import groovy.util.logging.Slf4j
-import io.reactivex.Observable
+import io.reactivex.rxjava3.core.Observable
 
 @Slf4j
 class InstanceSync extends BigIPEntitySync {
