@@ -187,7 +187,7 @@ class BigIpOptionSourceProvider implements OptionSourceProvider {
 			def loadBalancer = morpheusContext.loadBalancer.getLoadBalancerById(parentId.toLong()).blockingGet()
 			if(loadBalancer) {
 				def queryArgs = [
-					[name:'account.id', value:account.id, operator:'eq'],
+					//[name:'account.id', value:account.id, operator:'eq'],
 					[name:'loadBalancer.id', value:loadBalancer.id, operator:'eq'],
 					[name:'policyType', value:params.policyType ?: 'policy', operator:'eq']
 				]
@@ -207,7 +207,7 @@ class BigIpOptionSourceProvider implements OptionSourceProvider {
 			def lbInstance = params.domain
 			if(lbInstance) {
 				def queryArgs = [
-					[name:'account.id', value:account.id, operator:'eq'],
+					//[name:'account.id', value:account.id, operator:'eq'],
 					[name:'loadBalancer.id', value:lbInstance.loadBalancer.id, operator:'eq']
 				]
 
