@@ -957,13 +957,13 @@ class BigIpProvider implements LoadBalancerProvider {
 				log.info("BigIP sync (${loadBalancer.name}) complete.")
 
 				// update status
-				morpheusContext.async.loadBalancer.updateLoadBalancerStatus(loadBalancer, 'ok', null)
-				morpheusContext.async.loadBalancer.clearLoadBalancerAlarm(loadBalancer)
+				morpheusContext.loadBalancer.updateLoadBalancerStatus(loadBalancer, 'ok', null)
+				morpheusContext.loadBalancer.clearLoadBalancerAlarm(loadBalancer)
 				rtn.success = true
 			}
 			else {
 				rtn.addError("F5 BigIP is unreachable")
-				morpheusContext.async.loadBalancer.updateLoadBalancerStatus(loadBalancer, 'offline', 'Load Balancer is unreachable.')
+				morpheusContext.loadBalancer.updateLoadBalancerStatus(loadBalancer, 'offline', 'Load Balancer is unreachable.')
 			}
 		}
 		catch (e) {
@@ -1384,7 +1384,7 @@ class BigIpProvider implements LoadBalancerProvider {
 				createRtn.success = true
 			}
 			if (loadBalancerProfile.serviceType == 'client-ssl') {
-				def certSvc = morpheus.async.loadBalancer.certificate
+				def certSvc = morpheus.loadBalancer.certificate
 				// if a morpheus or self signed cert is selected, it will need to be installed
 				if (loadBalancerProfile.sslCert.isNumber()) {
 					AccountCertificate cert
@@ -1479,7 +1479,7 @@ class BigIpProvider implements LoadBalancerProvider {
 
 	@Override
 	ServiceResponse createLoadBalancerHealthMonitor(NetworkLoadBalancerMonitor monitor) {
-		def monitorSvc = morpheus.async.loadBalancer.monitor
+		def monitorSvc = morpheus.loadBalancer.monitor
 		ServiceResponse rtn = ServiceResponse.prepare()
 		try {
 			//prep up the create call and pass it
@@ -1554,7 +1554,7 @@ class BigIpProvider implements LoadBalancerProvider {
 
 	@Override
 	ServiceResponse updateLoadBalancerHealthMonitor(NetworkLoadBalancerMonitor monitor) {
-		def monitorSvc = morpheus.async.loadBalancer.monitor
+		def monitorSvc = morpheus.loadBalancer.monitor
 		ServiceResponse rtn = ServiceResponse.error()
 		try {
 			//prep up the create call and pass it
@@ -2089,13 +2089,13 @@ class BigIpProvider implements LoadBalancerProvider {
 			//pool
 			virtualServerConfig.defaultPool = instanceConfig.defaultPool
 			if(instanceConfig.defaultPool) {
-				virtualServerConfig.pool = morpheus.async.loadBalancer.pool.listById([instanceConfig.defaultPool.toLong()]).blockingFirst()
+				virtualServerConfig.pool = morpheus.loadBalancer.pool.listById([instanceConfig.defaultPool.toLong()]).blockingFirst()
 			}
 			//get policies
 			virtualServerConfig.defaultPolicy = instanceConfig.defaultPolicy
 			virtualServerConfig.policies = []
 			if(instanceConfig.defaultPolicy) {
-				def policy = morpheus.async.loadBalancer.policy.listById([instanceConfig.defaultPolicy.toLong()]).blockingFirst()
+				def policy = morpheus.loadBalancer.policy.listById([instanceConfig.defaultPolicy.toLong()]).blockingFirst()
 				if(policy)
 					virtualServerConfig.policies << [name:policy.name]
 			}
@@ -2108,17 +2108,17 @@ class BigIpProvider implements LoadBalancerProvider {
 			virtualServerConfig.httpProfile = instanceConfig.httpProfile
 			virtualServerConfig.profiles = []
 			if(instanceConfig.httpProfile) {
-				def profile = morpheus.async.loadBalancer.profile.listById([instanceConfig.httpProfile.toLong()]).blockingFirst()
+				def profile = morpheus.loadBalancer.profile.listById([instanceConfig.httpProfile.toLong()]).blockingFirst()
 				if(profile)
 					virtualServerConfig.profiles << [name:profile.name]
 			}
 			if(instanceConfig.clientProfile) {
-				def profile = morpheus.async.loadBalancer.profile.listById([instanceConfig.clientProfile.toLong()]).blockingFirst()
+				def profile = morpheus.loadBalancer.profile.listById([instanceConfig.clientProfile.toLong()]).blockingFirst()
 				if(profile)
 					virtualServerConfig.profiles << [name:profile.name]
 			}
 			if(instanceConfig.serverProfile) {
-				def profile = morpheus.async.loadBalancer.profile.listById([instanceConfig.serverProfile.toLong()]).blockingFirst()
+				def profile = morpheus.loadBalancer.profile.listById([instanceConfig.serverProfile.toLong()]).blockingFirst()
 				if(profile)
 					virtualServerConfig.profiles << [name:profile.name]
 			}
@@ -2199,13 +2199,13 @@ class BigIpProvider implements LoadBalancerProvider {
 			//pool
 			virtualServerConfig.defaultPool = instanceConfig.defaultPool
 			if(instanceConfig.defaultPool) {
-				virtualServerConfig.pool = morpheus.async.loadBalancer.pool.listById([instanceConfig.defaultPool.toLong()]).blockingFirst()
+				virtualServerConfig.pool = morpheus.loadBalancer.pool.listById([instanceConfig.defaultPool.toLong()]).blockingFirst()
 			}
 			//get policies
 			virtualServerConfig.defaultPolicy = instanceConfig.defaultPolicy
 			virtualServerConfig.policies = []
 			if(instanceConfig.defaultPolicy) {
-				def policy = morpheus.async.loadBalancer.policy.listById([instanceConfig.defaultPolicy.toLong()]).blockingFirst()
+				def policy = morpheus.loadBalancer.policy.listById([instanceConfig.defaultPolicy.toLong()]).blockingFirst()
 				if(policy)
 					virtualServerConfig.policies << [name:policy.name, partition:policy.partition]
 			}
@@ -2220,17 +2220,17 @@ class BigIpProvider implements LoadBalancerProvider {
 			virtualServerConfig.httpProfile = instanceConfig.httpProfile
 			virtualServerConfig.profiles = []
 			if(instanceConfig.httpProfile) {
-				def profile = morpheus.async.loadBalancer.profile.listById([instanceConfig.httpProfile.toLong()]).blockingFirst()
+				def profile = morpheus.loadBalancer.profile.listById([instanceConfig.httpProfile.toLong()]).blockingFirst()
 				if(profile)
 					virtualServerConfig.profiles << [name:profile.name]
 			}
 			if(instanceConfig.clientProfile) {
-				def profile = morpheus.async.loadBalancer.profile.listById([instanceConfig.clientProfile.toLong()]).blockingFirst()
+				def profile = morpheus.loadBalancer.profile.listById([instanceConfig.clientProfile.toLong()]).blockingFirst()
 				if(profile)
 					virtualServerConfig.profiles << [name:profile.name]
 			}
 			if(instanceConfig.serverProfile) {
-				def profile = morpheus.async.loadBalancer.profile.listById([instanceConfig.serverProfile.toLong()]).blockingFirst()
+				def profile = morpheus.loadBalancer.profile.listById([instanceConfig.serverProfile.toLong()]).blockingFirst()
 				if(profile)
 					virtualServerConfig.profiles << [name:profile.name]
 			}
@@ -2269,7 +2269,7 @@ class BigIpProvider implements LoadBalancerProvider {
 
 	@Override
 	ServiceResponse validateLoadBalancerVirtualServer(NetworkLoadBalancerInstance instance) {
-		def policySvc = morpheus.async.loadBalancer.policy
+		def policySvc = morpheus.loadBalancer.policy
 		def rtn = ServiceResponse.prepare()
 		try {
 			//need a name
@@ -2520,7 +2520,7 @@ class BigIpProvider implements LoadBalancerProvider {
 	ServiceResponse updateInstance(NetworkLoadBalancerInstance instance) {
 		def rtn = ServiceResponse.prepare()
 		try {
-			def lbSvc = morpheus.async.loadBalancer
+			def lbSvc = morpheus.loadBalancer
 			def changeResults = instance.holder.changeResults
 			def opts = instance.holder.options
 			if(changeResults.changed == true) {
@@ -2571,7 +2571,7 @@ class BigIpProvider implements LoadBalancerProvider {
 		def rtn = [success:false]
 		try {
 			//prep up the create call and pass it
-			def lbSvc = morpheus.async.loadBalancer
+			def lbSvc = morpheus.loadBalancer
 			def loadBalancer = loadBalancerInstance.loadBalancer
 			def apiConfig = getConnectionBase(loadBalancer)
 			def poolConfig = [:] + apiConfig
@@ -2668,7 +2668,7 @@ class BigIpProvider implements LoadBalancerProvider {
 	def removeInstance(Map instanceConfig, Instance instance) {
 		def rtn = [success:false, deleted:false]
 		try {
-			def lbSvc = morpheus.async.loadBalancer
+			def lbSvc = morpheus.loadBalancer
 			def loadBalancer =
 				instanceConfig.loadBalancerInstance?.loadBalancer ?: lbSvc.getLoadBalancerById(instanceConfig.loadBalancer.id).blockingGet()
 			log.info("Removing VIP from LoadBalancer: {}", instanceConfig.loadBalancer?.name)
@@ -3399,7 +3399,7 @@ class BigIpProvider implements LoadBalancerProvider {
 		if (!keyExists(params)) {
 			def endpointPath = "${params.path}/tm/sys/crypto/key"
 			def data = [
-				fromUrl:"${morpheus.async.loadBalancer.applianceUrl}/certificate/info/key/${params.token.value}/${params.nlbi}",
+				fromUrl:"${morpheus.loadBalancer.applianceUrl}/certificate/info/key/${params.token.value}/${params.nlbi}",
 				command:'install',
 				name:params.keyName
 			]
@@ -3424,7 +3424,7 @@ class BigIpProvider implements LoadBalancerProvider {
 	}
 
 	def installSslCert(NetworkLoadBalancerInstance nlbi, AccountCertificate cert) {
-		def certSvc = morpheus.async.loadBalancer.certificate
+		def certSvc = morpheus.loadBalancer.certificate
 		def output = [success:true]
 		def token = certSvc.createCertInstallToken(cert, "${certSvc.sslInstallTokenName}.${nlbi.id}").blockingGet()
 		def apiConfig = getConnectionBase(nlbi.loadBalancer)
@@ -3452,7 +3452,7 @@ class BigIpProvider implements LoadBalancerProvider {
 	def installCert(Map params) {
 		if (!certExists(params)) {
 			def endpointPath = "${params.path}/tm/sys/crypto/cert".toString()
-			def url = morpheus.async.loadBalancer.applianceUrl
+			def url = morpheus.loadBalancer.applianceUrl
 			def data = [
 				fromUrl:"${url}${url.endsWith('/') ? '' : '/'}certificate/info/cert/${params.token.value}/${params.nlbi}".toString(),
 				command:'install',
@@ -3783,7 +3783,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			return out
 		}
 		// add conditions to rule
-		def pool = morpheus.async.loadBalancer.pool.listById([config.pool.toLong()]).blockingSingle()
+		def pool = morpheus.loadBalancer.pool.listById([config.pool.toLong()]).blockingSingle()
 		endpointPath = "${auth.path}/tm/ltm/policy/~${policy.partition ?: BigIpUtility.BIGIP_PARTITION}~Drafts~${policy.name}/rules/${rule.name}"
 		// add action section to body
 		data = [
@@ -3881,7 +3881,7 @@ class BigIpProvider implements LoadBalancerProvider {
 		//add pools
 		for (action in item.actionsReference?.items) {
 			if(action.pool) {
-				def poolMatch = morpheus.async.loadBalancer.pool.findByLoadBalancerAndExternalId(loadBalancer, action.pool).blockingGet()
+				def poolMatch = morpheus.loadBalancer.pool.findByLoadBalancerAndExternalId(loadBalancer, action.pool).blockingGet()
 				if(poolMatch.isPresent()) {
 					add.pools.add(poolMatch.get())
 				}
@@ -4307,7 +4307,7 @@ class BigIpProvider implements LoadBalancerProvider {
 
 	protected getConnectionBase(NetworkLoadBalancer lb, Map opts = null) {
 		if (!lb.credentialLoaded)
-			morpheus.async.loadBalancer.loadLoadBalancerCredentials(lb)
+			morpheus.loadBalancer.loadLoadBalancerCredentials(lb)
 
 		def connectionBase = [
 			url:"https://${lb.sshHost}:${lb.apiPort}",

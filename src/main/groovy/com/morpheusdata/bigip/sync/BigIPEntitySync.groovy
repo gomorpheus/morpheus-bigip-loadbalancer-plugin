@@ -17,7 +17,7 @@ abstract class BigIPEntitySync {
 				return false
 
 			// Check to see if our load balancer has been deleted
-			if (!morpheusContext.async.loadBalancer.getLoadBalancerById(loadBalancer.id).blockingGet())
+			if (!morpheusContext.loadBalancer.getLoadBalancerById(loadBalancer.id).blockingGet())
 				return false
 
 			return true

@@ -28,7 +28,7 @@ class CertificateSync extends BigIPEntitySync {
 
 		try {
 			// get the load balancer profile service to interact with database
-			def svc = morpheusContext.async.loadBalancer.certificate
+			def svc = morpheusContext.loadBalancer.certificate
 
 			// grab master items from the bigip api
 			def apiItems = plugin.provider.listCertificates(loadBalancer)

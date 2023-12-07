@@ -27,7 +27,7 @@ class HealthMonitorSync extends BigIPEntitySync {
 
 		try {
 			// get the load balancer health monitor service to interact with database
-			def svc = morpheusContext.async.loadBalancer.monitor
+			def svc = morpheusContext.loadBalancer.monitor
 
 			// grab master items from the bigip api
 			def apiItems = plugin.provider.listHealthMonitors(loadBalancer)
