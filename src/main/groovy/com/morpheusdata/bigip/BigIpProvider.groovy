@@ -2597,6 +2597,8 @@ class BigIpProvider implements LoadBalancerProvider {
 					containerList << container
 				}
 			}
+
+
 			//add any add containers
 			opts.addContainers?.each { container ->
 				def existingMatch = loadBalancerInstance.instance?.containers?.find{ it.id == container.id }
@@ -2621,6 +2623,26 @@ class BigIpProvider implements LoadBalancerProvider {
 					//add to the member list
 					poolConfig.members << [name:serverName, partition:partition]
 				}
+			} else if(loadBalancerInstance.serverGroup) {
+				Collection<Long> serverIds = loadBalancerInstance.serverGroup?.servers?.collect{ it.id } as Collection<Long>
+				if(serverIds) {
+					List<ComputeServer> servers = morpheusContext.services.computeServer.list(new DataQuery().withFilters(new DataFilter("id","in",serverIds),new DataFilter<Boolean>("typeSet.containerType.containerPorts.loadBalance","=",true)))
+					servers?.each { server ->
+						namingConfig = lbSvc.buildNamingConfig(server, opts, null)
+						def serverName = lbSvc.buildServerName(loadBalancer.serverName, server.id, namingConfig)
+						def serverIp = lbSvc.getServerIp(server, true)
+						//if this is a new server create it
+
+						//new - create it
+						def serverMonitor = '/Common/icmp'
+						def serverConfig = apiConfig + [name:serverName, ipAddress:serverIp, port:servicePort, healthMonitor:serverMonitor, partition:partition]
+						def createResults = createServer(serverConfig)
+
+						//add to the member list
+						poolConfig.members << [name:serverName, partition:partition]
+					}
+				}
+
 			}
 			//update it
 			def memberResults = updatePoolMembers(poolConfig)
