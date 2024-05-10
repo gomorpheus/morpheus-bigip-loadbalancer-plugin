@@ -21,6 +21,7 @@ import com.morpheusdata.core.util.MorpheusUtils
 import com.morpheusdata.model.AccountCertificate
 import com.morpheusdata.model.Icon
 import com.morpheusdata.model.Instance
+import com.morpheusdata.model.ComputeServer
 import com.morpheusdata.model.NetworkLoadBalancer
 import com.morpheusdata.model.NetworkLoadBalancerInstance
 import com.morpheusdata.model.NetworkLoadBalancerMonitor
