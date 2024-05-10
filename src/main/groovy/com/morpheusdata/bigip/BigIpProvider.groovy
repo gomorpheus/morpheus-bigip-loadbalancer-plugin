@@ -1588,7 +1588,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			def results = updateHealthMonitor(monitorConfig)
 			log.debug("api results: {}", results)
 			rtn.success = results.success
-			rtn.authToken = results.authToken
+
 			if(rtn.success != true) {
 				//fill in errors
 				rtn.errors = results.errors
