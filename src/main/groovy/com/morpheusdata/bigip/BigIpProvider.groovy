@@ -574,15 +574,29 @@ class BigIpProvider implements LoadBalancerProvider {
 			fieldContext:'domain',
 			displayOrder:3,
 			fieldLabel:'VIP Address',
-			required:true,
+			required:false,
 			inputType:OptionType.InputType.TEXT
+		)
+		instanceOptionTypes << new OptionType(
+			name:'vipPool',
+			code:'plugin.bigip.instance.vipPool',
+			fieldName:'vipPool',
+			fieldContext:'domain',
+			displayOrder:4,
+			fieldLabel:'VIP Pool',
+			required:false,
+			editable:true,
+			helpBlock:'Use a pool to acquire a VIP address',
+			defaultValue:'none',
+			inputType:OptionType.InputType.SELECT,
+			optionSource:'vipNetworkPools'
 		)
 		instanceOptionTypes << new OptionType(
 			name:'vipPort',
 			code:'plugin.bigip.instance.vipPort',
 			fieldName:'vipPort',
 			fieldContext:'domain',
-			displayOrder:4,
+			displayOrder:5,
 			fieldLabel:'VIP Port',
 			required:true,
 			inputType:OptionType.InputType.TEXT
@@ -592,7 +606,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.instance.persistence',
 			fieldName:'vipSticky',
 			fieldContext:'domain',
-			displayOrder:5,
+			displayOrder:6,
 			fieldLabel:'Persistence',
 			required:false,
 			inputType:OptionType.InputType.SELECT,
@@ -603,7 +617,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.instance.balanceMode',
 			fieldName:'vipBalance',
 			fieldContext:'domain',
-			displayOrder:6,
+			displayOrder:7,
 			fieldLabel:'Balance Mode',
 			required:true,
 			inputType:OptionType.InputType.SELECT,
@@ -614,7 +628,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.instance.monitor',
 			fieldName:'monitor',
 			fieldContext:'domain',
-			displayOrder:7,
+			displayOrder:8,
 			fieldLabel:'Monitor',
 			required:false,
 			inputType:OptionType.InputType.SELECT,
@@ -625,7 +639,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.instance.sslCert',
 			fieldName:'sslCert',
 			fieldContext:'domain',
-			displayOrder:8,
+			displayOrder:9,
 			fieldLabel:'SSL Certificate',
 			required:true,
 			inputType:OptionType.InputType.SELECT,
@@ -636,7 +650,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.instance.sslRedirectMode',
 			fieldName:'sslRedirectMode',
 			fieldContext:'domain',
-			displayOrder:9,
+			displayOrder:10,
 			fieldLabel:'SSL Redirect Mode',
 			required:false,
 			inputType:OptionType.InputType.SELECT,
@@ -712,15 +726,29 @@ class BigIpProvider implements LoadBalancerProvider {
 			fieldContext:'domain',
 			displayOrder:11,
 			fieldLabel:'VIP Address',
-			required:true,
+			required:false,
 			inputType:OptionType.InputType.TEXT
+		)
+		virtualServerOptions << new OptionType(
+			name:'vipPool',
+			code:'plugin.bigip.virtualService.vipPool',
+			fieldName:'vipPool',
+			fieldContext:'domain',
+			displayOrder:12,
+			fieldLabel:'VIP Pool',
+			required:false,
+			editable:true,
+			helpBlock:'Use a pool to acquire a VIP address',
+			defaultValue:'none',
+			inputType:OptionType.InputType.SELECT,
+			optionSource:'vipNetworkPools'
 		)
 		virtualServerOptions << new OptionType(
 			name:'vipPort',
 			code:'plugin.bigip.virtualService.vipPort',
 			fieldName:'vipPort',
 			fieldContext:'domain',
-			displayOrder:12,
+			displayOrder:13,
 			fieldLabel:'VIP Port',
 			required:true,
 			inputType:OptionType.InputType.TEXT
@@ -730,7 +758,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.virtualService.sourceAddress',
 			fieldName:'sourceAddress',
 			fieldContext:'domain',
-			displayOrder:13,
+			displayOrder:14,
 			fieldLabel:'Source Address',
 			required:false,
 			inputType:OptionType.InputType.TEXT
@@ -740,7 +768,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.virtualService.vipProtocol',
 			fieldName:'vipProtocol',
 			fieldContext:'domain',
-			displayOrder:14,
+			displayOrder:15,
 			fieldLabel:'Protocol',
 			required:true,
 			editable:true,
@@ -752,7 +780,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.virtualService.vipProfiles',
 			fieldName:'profiles.id',
 			fieldContext:'domain',
-			displayOrder:15,
+			displayOrder:16,
 			fieldLabel:'Profiles',
 			required:false,
 			editable:true,
@@ -765,7 +793,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.virtualService.vipPolicies',
 			fieldName:'policies.id',
 			fieldContext:'domain',
-			displayOrder:16,
+			displayOrder:17,
 			fieldLabel:'Policies',
 			required:false,
 			editable:true,
@@ -777,7 +805,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.virtualService.vipScripts',
 			fieldName:'scripts.id',
 			fieldContext:'domain',
-			displayOrder:17,
+			displayOrder:18,
 			fieldLabel:'IRules',
 			required:false,
 			editable:true,
@@ -789,7 +817,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.virtualService.persistence',
 			fieldName:'vipSticky',
 			fieldContext:'domain',
-			displayOrder:18,
+			displayOrder:19,
 			fieldLabel:'Persistence',
 			required:false,
 			inputType:OptionType.InputType.SELECT,
@@ -800,7 +828,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.virtualService.defaultPool',
 			fieldName:'defaultPool',
 			fieldContext:'config',
-			displayOrder:19,
+			displayOrder:20,
 			fieldLabel:'Default Pool',
 			required:false,
 			inputType:OptionType.InputType.SELECT,
@@ -2282,7 +2310,9 @@ class BigIpProvider implements LoadBalancerProvider {
 				rtn.errors.vipProtocol = 'Protocol is required'
 			}
 			if(!instance.vipAddress) {
-				rtn.errors.vipAddress = 'Vip Address is required'
+				if (instance.vipPool == null) {
+					rtn.errors.vipAddress = 'Vip address must be specified, or a vip IP pool must be selected'
+				}
 			}
 			if(!instance.vipPort) {
 				rtn.errors.vipPort = 'Vip Port is required'
