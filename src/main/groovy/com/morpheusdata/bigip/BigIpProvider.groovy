@@ -2368,7 +2368,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			def healthMonitorName = BigIpUtility.buildHealthMonitorName(loadBalancerInstance.id, servicePort, sslEnabled)
 			def keepGoing = true
 			//naming
-			def firstContainer = instance.containers?.size() > 0 ? instance.containers.first() : null
+			def firstContainer = instance?.containers?.size() > 0 ? instance?.containers.first() : null
 			def namingConfig = lbSvc.buildNamingConfig(firstContainer, opts, null)
 			//results
 			def createResults
@@ -2391,13 +2391,33 @@ class BigIpProvider implements LoadBalancerProvider {
 			}
 			// create nodes
 			if(keepGoing == true) {
-				loadBalancerInstance.instance.containers.each { container ->
+				loadBalancerInstance.instance?.containers?.each { container ->
 					namingConfig = lbSvc.buildNamingConfig(container, opts, null)
 					def serverName = lbSvc.buildServerName(loadBalancer.serverName, container.server.id, namingConfig)
 					def serverIp = lbSvc.getContainerIp(container, true) // prefer external address of container
 					def serverMonitor = '/Common/icmp'
 					def serverConfig = apiConfig +
 						[name:serverName, ipAddress:serverIp, port:servicePort, healthMonitor:serverMonitor, authToken:createResults.authToken, partition:partition]
+					createResults = createServer(serverConfig)
+					if(createResults.success == true) {
+						serverNodes << serverName
+					} else {
+						rtn.success = false
+						keepGoing = false
+						rtn.msg = 'failed to create server: ' + createResults.message
+						rtn.data = createResults.node
+						rtn.results = createResults
+					}
+				}
+
+				loadBalancerInstance.serverGroup?.servers?.each { server ->
+
+					namingConfig = lbSvc.buildNamingConfig(server, opts, null)
+					def serverName = lbSvc.buildServerName(loadBalancer.serverName, server.id, namingConfig)
+					def serverIp = lbSvc.getServerIp(container, true) // prefer external address of container
+					def serverMonitor = '/Common/icmp'
+					def serverConfig = apiConfig +
+							[name:serverName, ipAddress:serverIp, port:servicePort, healthMonitor:serverMonitor, authToken:createResults.authToken, partition:partition]
 					createResults = createServer(serverConfig)
 					if(createResults.success == true) {
 						serverNodes << serverName
