@@ -2369,7 +2369,13 @@ class BigIpProvider implements LoadBalancerProvider {
 			def keepGoing = true
 			//naming
 			def firstContainer = instance?.containers?.size() > 0 ? instance?.containers.first() : null
-			def namingConfig = lbSvc.buildNamingConfig(firstContainer, opts, null)
+			def namingConfig
+			if(firstContainer) {
+				namingConfig = lbSvc.buildNamingConfig(firstContainer, opts, null)
+			} else if(instance.serverGroup?.servers?.size() > 0) {
+				namingConfig = lbSvc.buildNamingConfig(instance.serverGroup?.servers.first(), opts, null)
+			}
+
 			//results
 			def createResults
 			//health monitor
