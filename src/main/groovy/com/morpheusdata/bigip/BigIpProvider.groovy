@@ -2730,6 +2730,7 @@ class BigIpProvider implements LoadBalancerProvider {
 								partition:loadBalancerInstance.partition
 			]
 			def removeResults = removeInstance(activeConfig, loadBalancerInstance.instance)
+			removeResults = removeResults + removeInstance(activeConfig, loadBalancerInstance.serverGroup)
 			rtn.success = removeResults.success
 
 		} catch(e) {
@@ -2740,6 +2741,9 @@ class BigIpProvider implements LoadBalancerProvider {
 
     // The operations that deal with the bigip api
 	def removeInstance(Map instanceConfig, Instance instance) {
+		if(!instance) {
+			return [success:true]
+		}
 		def rtn = [success:false, deleted:false]
 		try {
 			def lbSvc = morpheus.async.loadBalancer
@@ -2850,11 +2854,192 @@ class BigIpProvider implements LoadBalancerProvider {
 			//remove servers if nothing aimed at them
 			if(keepGoing == true) {
 				def serverIdList = lbSvc.getLoadBalancerServerIds(loadBalancer, instanceConfig.id).blockingSubscribe()
+				instance?.containers?.findAll{ctr -> ctr.inService}?.each { container ->
+					namingConfig = lbSvc.buildNamingConfig(container, removeOpts, null)
+					def serverMatch = serverIdList.find { it == container.server.id }
+					if(!serverMatch) {
+						def serverName = lbSvc.buildServerName(instanceConfig.serverName, container.server.id, namingConfig)
+						def serverConfig = apiConfig + [name:serverName, authToken:virtualServerConfig.authToken, partition:partition]
+						def deleteResult = deleteServer(serverConfig)
+						log.debug("delete server results: {}", deleteResult)
+					} else {
+						//remove monitor?
+					}
+				}
+
 				instance.containers?.findAll{ctr -> ctr.inService}?.each { container ->
 					namingConfig = lbSvc.buildNamingConfig(container, removeOpts, null)
 					def serverMatch = serverIdList.find { it == container.server.id }
 					if(!serverMatch) {
 						def serverName = lbSvc.buildServerName(instanceConfig.serverName, container.server.id, namingConfig)
+						def serverConfig = apiConfig + [name:serverName, authToken:virtualServerConfig.authToken, partition:partition]
+						def deleteResult = deleteServer(serverConfig)
+						log.debug("delete server results: {}", deleteResult)
+					} else {
+						//remove monitor?
+					}
+				}
+			}
+			//remove the health monitor
+			if(instanceConfig.monitor == null) {
+				def healthMonitorName = BigIpUtility.buildHealthMonitorName(instanceConfig.id, servicePort, sslEnabled)
+				if(keepGoing == true) {
+					def healthMonitorConfig = apiConfig + [name:healthMonitorName, authToken:virtualServerConfig.authToken, partition:partition]
+					deleteResults = deleteHealthMonitor(healthMonitorConfig)
+					if(deleteResults.success != true) {
+						rtn.success = false
+						keepGoing = false
+						rtn.status = deleteResults.status
+						rtn.msg = 'failed to delete health monitor: ' + deleteResults.message
+						rtn.message = deleteResults.message
+						rtn.content = deleteResults.data
+						rtn.results = deleteResults
+					}
+				}
+			}
+			//all done
+			if(keepGoing == true) {
+				rtn.success = true
+			}
+		} catch(e) {
+			log.error("removeInstance error: ${e}", e)
+		}
+		log.debug("returning: {}", rtn)
+		return rtn
+	}
+
+	def removeInstance(Map instanceConfig, ComputeServerGroup serverGroup) {
+		if(!serverGroup) {
+			return [success:true]
+		}
+		def rtn = [success:false, deleted:false]
+		try {
+			def lbSvc = morpheus.async.loadBalancer
+			def loadBalancer =
+					instanceConfig.loadBalancerInstance?.loadBalancer ?: lbSvc.getLoadBalancerById(instanceConfig.loadBalancer.id).blockingGet()
+			log.info("Removing VIP from LoadBalancer: {}", instanceConfig.loadBalancer?.name)
+			//vip details
+			def vipAddress = instanceConfig.vipAddress
+			def vipHostname = instanceConfig.vipHostname
+			def vipProtocol = instanceConfig.vipProtocol
+			def vipMode = instanceConfig.vipMode
+			def vipPort = instanceConfig.vipPort
+			def servicePort = instanceConfig.servicePort
+			def backendPort = instanceConfig.backendPort
+			def vipShared = instanceConfig.vipShared
+			def vipDirectAddress = instanceConfig.vipDirectAddress
+			def loadBalancerInstance = instanceConfig.loadBalancerInstance
+			//ssl config
+			def sslCert = instanceConfig.sslCert
+			def sslEnabled = sslCert != null
+			def partition = instanceConfig.partition
+			//base api config
+			def apiConfig = getConnectionBase(loadBalancer)
+			//do the deletes
+			def keepGoing = true
+			//naming
+			def removeOpts = [:]
+			def firstContainer = instance.containers?.size() > 0 ? instance.containers.first() : null
+			def namingConfig = lbSvc.buildNamingConfig(firstContainer, removeOpts, null)
+			//results
+			def deleteResults
+			//remove the virtual server - todo handle shared vips
+			def virtualServerName = lbSvc.buildVirtualServerName(instanceConfig.virtualServiceName, instanceConfig.id, instanceConfig.vipName, sslEnabled, namingConfig)
+			def virtualServerConfig = apiConfig + [name:virtualServerName, vipAddress:vipAddress, vipPort:vipPort, partition:partition]
+			//load the virtual server
+			def policyName = BigIpUtility.generatePolicyName(loadBalancerInstance)
+			def virtualServerResults = vipExists(virtualServerConfig)
+			virtualServerConfig.authToken = virtualServerResults.authToken
+			def virtualServer = virtualServerResults.vip
+			//remove the vip if it only has one policy
+			log.debug("virtualServerResults: {}", virtualServerResults)
+			if(virtualServer) {
+				def policyMatch = virtualServer.policiesReference?.items?.find{ it.name == policyName }
+				def policyCount = virtualServer.policiesReference?.items?.size() ?: 0
+				log.debug("policyMatch: {} count: {}", policyMatch, policyCount)
+				if(policyCount == 0 || (policyMatch && policyCount == 1)) {
+					//no more policies - can remove the vip - have to look at other types of policies
+					deleteResults = deleteVirtualServer(virtualServerConfig)
+					if(deleteResults.success != true) {
+						rtn.success = false
+						keepGoing = false
+						rtn.status = deleteResults.status
+						rtn.msg = 'failed to delete virtual server: ' + deleteResults.message
+						rtn.message = deleteResults.message
+						rtn.content = deleteResults.content
+						rtn.results = deleteResults.results
+					}
+				}
+			}
+			//remove policy from virtual server
+			def out = removeVipPolicy(virtualServerConfig + [policyName:BigIpUtility.generatePolicyName(loadBalancerInstance)])
+			if(!out.success) {
+				log.warn("Error Removing Policy from Load Balancer Instance")
+				rtn.success = false
+				keepGoing = false
+				rtn.message = out.data.message ?: out.errors?.error ?: out.message
+			}
+			//delete policy
+			out = deleteBigIpPolicy(virtualServerConfig + [policyName:policyName])
+			if(!out.success) {
+				log.warn("Error Removing BigIP Policy from Load Balancer Instance")
+				rtn.success = false
+				keepGoing = false
+				rtn.message = out.content
+			}
+			if(sslEnabled) {
+				out = removeVipProfile(virtualServerConfig + [profileName:BigIpUtility.generateSslProfileName(loadBalancerInstance)])
+				if(!out.success) {
+					log.warn("Error Removing Profiles from Load Balancer Instance")
+					rtn.success = false
+					keepGoing = false
+					rtn.message = out.msg
+				}
+				out = deleteSslProfile(virtualServerConfig + [profileName:BigIpUtility.generateSslProfileName(loadBalancerInstance)])
+				if(!out.success) {
+					log.warn("Error Removing SSL Profiles from Load Balancer Instance")
+					rtn.success = false
+					keepGoing = false
+					rtn.message = out.msg
+				}
+			}
+			//remove the pool
+			def poolName = lbSvc.buildPoolName(loadBalancer.poolName, loadBalancerInstance.id, sslEnabled, namingConfig)
+			if(keepGoing == true) {
+				def poolConfig = apiConfig + [name:poolName, authToken:virtualServerConfig.authToken, partition:partition]
+				// remove pool from virtual server
+				removeVipPool(poolConfig + [vipAddress:vipAddress, vipPort:vipPort])
+				deleteResults = deletePool(poolConfig)
+				if(deleteResults.success != true) {
+					rtn.success = false
+					keepGoing = false
+					rtn.msg = 'failed to delete server pool: ' + deleteResults.msg
+					rtn.message = deleteResults.msg
+					rtn.data = deleteResults.data
+					rtn.results = deleteResults
+				}
+			}
+			//remove servers if nothing aimed at them
+			if(keepGoing == true) {
+				def serverIdList = lbSvc.getLoadBalancerServerIds(loadBalancer, instanceConfig.id).blockingSubscribe()
+				instance?.containers?.findAll{ctr -> ctr.inService}?.each { container ->
+					namingConfig = lbSvc.buildNamingConfig(container, removeOpts, null)
+					def serverMatch = serverIdList.find { it == container.server.id }
+					if(!serverMatch) {
+						def serverName = lbSvc.buildServerName(instanceConfig.serverName, container.server.id, namingConfig)
+						def serverConfig = apiConfig + [name:serverName, authToken:virtualServerConfig.authToken, partition:partition]
+						def deleteResult = deleteServer(serverConfig)
+						log.debug("delete server results: {}", deleteResult)
+					} else {
+						//remove monitor?
+					}
+				}
+
+				serverGroup.servers?.each { server ->
+					namingConfig = lbSvc.buildNamingConfig(server, removeOpts, null)
+					def serverMatch = serverIdList.find { it == server.id }
+					if(!serverMatch) {
+						def serverName = lbSvc.buildServerName(instanceConfig.serverName, server.id, namingConfig)
 						def serverConfig = apiConfig + [name:serverName, authToken:virtualServerConfig.authToken, partition:partition]
 						def deleteResult = deleteServer(serverConfig)
 						log.debug("delete server results: {}", deleteResult)
