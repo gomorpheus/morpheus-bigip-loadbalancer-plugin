@@ -22,6 +22,7 @@ import com.morpheusdata.model.AccountCertificate
 import com.morpheusdata.model.Icon
 import com.morpheusdata.model.Instance
 import com.morpheusdata.model.ComputeServer
+import com.morpheusdata.model.ComputeServerGroup
 import com.morpheusdata.model.NetworkLoadBalancer
 import com.morpheusdata.model.NetworkLoadBalancerInstance
 import com.morpheusdata.model.NetworkLoadBalancerMonitor
@@ -2338,6 +2339,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			def loadBalancer = loadBalancerInstance.loadBalancer
 			def lbSvc = morpheus.loadBalancer
 			def instance = loadBalancerInstance.instance
+            def serverGroup = loadBalancerInstance.serverGroup
 			//vip details
 			def vipAddress = loadBalancerInstance.vipAddress
 			def vipHostname = loadBalancerInstance.vipHostname
@@ -2372,8 +2374,8 @@ class BigIpProvider implements LoadBalancerProvider {
 			def namingConfig
 			if(firstContainer) {
 				namingConfig = lbSvc.buildNamingConfig(firstContainer, opts, null)
-			} else if(instance.serverGroup?.servers?.size() > 0) {
-				namingConfig = lbSvc.buildNamingConfig(instance.serverGroup?.servers.first(), opts, null)
+			} else if(serverGroup?.servers?.size() > 0) {
+				namingConfig = lbSvc.buildNamingConfig(serverGroup?.servers.first(), opts, loadBalancerInstance)
 			}
 
 			//results
@@ -2415,12 +2417,11 @@ class BigIpProvider implements LoadBalancerProvider {
 						rtn.results = createResults
 					}
 				}
+				serverGroup.servers?.each { server ->
 
-				loadBalancerInstance.serverGroup?.servers?.each { server ->
-
-					namingConfig = lbSvc.buildNamingConfig(server, opts, null)
+					namingConfig = lbSvc.buildNamingConfig(server, opts, loadBalancerInstance)
 					def serverName = lbSvc.buildServerName(loadBalancer.serverName, server.id, namingConfig)
-					def serverIp = lbSvc.getServerIp(container, true) // prefer external address of container
+					def serverIp = lbSvc.getServerIp(server, true) // prefer external address of container
 					def serverMonitor = '/Common/icmp'
 					def serverConfig = apiConfig +
 							[name:serverName, ipAddress:serverIp, port:servicePort, healthMonitor:serverMonitor, authToken:createResults.authToken, partition:partition]
@@ -2498,7 +2499,7 @@ class BigIpProvider implements LoadBalancerProvider {
 					}
 				}
 				// create policy
-				if (keepGoing) {
+				if (keepGoing && !serverGroup) {
 					def res = createBigIpPolicy(apiConfig + [policyName:BigIpUtility.generatePolicyName(loadBalancerInstance), partition:partition])
 					if(res.success) {
 						// add policy rules
@@ -2533,6 +2534,9 @@ class BigIpProvider implements LoadBalancerProvider {
 				}
 				//create vip
 				if (keepGoing) {
+                    if(serverGroup){
+                        virtualServerConfig.noProfiles = true
+                    }
 					createResults = createVirtualServer(virtualServerConfig)
 					if (createResults.success != true) {
 						rtn.success = false
@@ -2576,7 +2580,11 @@ class BigIpProvider implements LoadBalancerProvider {
 
 	@Override
 	ServiceResponse updateInstance(NetworkLoadBalancerInstance instance) {
-		def rtn = ServiceResponse.prepare()
+        def rtn = ServiceResponse.prepare()
+        if(instance.serverGroup){
+            return updateInstance(instance, instance.serverGroup)
+        }
+		
 		try {
 			def lbSvc = morpheus.async.loadBalancer
 			def changeResults = instance.holder.changeResults
@@ -2624,6 +2632,71 @@ class BigIpProvider implements LoadBalancerProvider {
 
 		return rtn
 	}
+
+    ServiceResponse updateInstance(NetworkLoadBalancerInstance instance, ComputeServerGroup serverGroup) {
+
+         def rtn = ServiceResponse.prepare()
+		try{
+            def lbSvc = morpheus.async.loadBalancer
+			if(!serverGroup)
+				return [success:false, message:'Server Group not found']
+			def loadBalancer = instance.loadBalancer
+			def apiConfig = getConnectionBase(loadBalancer)
+			def poolConfig = [:] + apiConfig
+
+			//ssl
+			def sslCert = instance.sslCert
+			def sslEnabled = sslCert != null
+			//pool config
+			def namingConfig = lbSvc.buildNamingConfig(serverGroup.servers.first(), [:], instance)
+            def poolName = lbSvc.buildPoolName(loadBalancer.poolName, instance.id, sslEnabled, namingConfig)
+			def servicePort = instance.servicePort
+			def partition = instance.partition
+			def createResults
+			def serverNodes = []
+            def healthMonitorName = BigIpUtility.buildHealthMonitorName(instance.id, servicePort, sslEnabled)
+			//fill in config
+			poolConfig.name = poolName
+			poolConfig.port = instance.servicePort
+			poolConfig.partition = partition
+			poolConfig.members = []
+            def servers = serverGroup.servers.findAll{ it.computeServerType?.nodeType == 'kube-master' }?.sort{it.id}
+			for(server in servers){
+				namingConfig = lbSvc.buildNamingConfig( server, [:], instance)
+				def serverName = lbSvc.buildServerName(loadBalancer.serverName, server.id, namingConfig)
+				def serverIp = lbSvc.getServerIp(server, true)
+				def serverMonitor = '/Common/icmp'
+				def serverConfig = apiConfig +
+					[name:serverName, ipAddress:serverIp, port:servicePort, healthMonitor:serverMonitor, partition:partition]
+				createServer(serverConfig)
+				serverNodes << serverName
+			}
+
+			//add pool members
+			def memberConfig = apiConfig +
+				[name:poolName, monitorName:"/${partition}/${healthMonitorName}", port:servicePort,
+				 members:serverNodes.collect{ node -> return [name:node, partition:partition] }, partition:partition]
+			createResults = addPoolMembers(memberConfig)
+			log.debug("add pool memeber results: {}", createResults)
+			if(createResults.success != true) {
+				rtn.success = false
+				keepGoing = false
+				rtn.status = createResults.status
+				rtn.msg = 'failed to assign pool members: ' + createResults.message
+				rtn.message = createResults.message
+				rtn.content = createResults.content
+				rtn.results = createResults
+			} else {
+                rtn.success = true
+			}
+
+		} catch(e){
+			log.error("error updating pool: ${e}", e)
+            rtn.success = false
+			rtn.msg = 'unknown error updating pool ' + e.message
+		}
+		return rtn
+    }
 
 	def updateInstanceMembers(NetworkLoadBalancerInstance loadBalancerInstance, Map opts = [:]) {
 		def rtn = [success:false]
@@ -2914,43 +2987,43 @@ class BigIpProvider implements LoadBalancerProvider {
 		return rtn
 	}
 
-	def removeInstance(Map instanceConfig, ComputeServerGroup serverGroup) {
+    @Override
+	ServiceResponse removeInstance(NetworkLoadBalancerInstance loadBalancerInstance, ComputeServerGroup serverGroup) {
+
 		if(!serverGroup) {
 			return [success:true]
 		}
-		def rtn = [success:false, deleted:false]
+		ServiceResponse rtn = ServiceResponse.prepare()
 		try {
 			def lbSvc = morpheus.async.loadBalancer
-			def loadBalancer =
-					instanceConfig.loadBalancerInstance?.loadBalancer ?: lbSvc.getLoadBalancerById(instanceConfig.loadBalancer.id).blockingGet()
-			log.info("Removing VIP from LoadBalancer: {}", instanceConfig.loadBalancer?.name)
+			def loadBalancer = loadBalancerInstance.loadBalancer
+			log.info("Removing VIP from LoadBalancer: {}", loadBalancer?.name)
 			//vip details
-			def vipAddress = instanceConfig.vipAddress
-			def vipHostname = instanceConfig.vipHostname
-			def vipProtocol = instanceConfig.vipProtocol
-			def vipMode = instanceConfig.vipMode
-			def vipPort = instanceConfig.vipPort
-			def servicePort = instanceConfig.servicePort
-			def backendPort = instanceConfig.backendPort
-			def vipShared = instanceConfig.vipShared
-			def vipDirectAddress = instanceConfig.vipDirectAddress
-			def loadBalancerInstance = instanceConfig.loadBalancerInstance
+			def vipAddress = loadBalancerInstance.vipAddress
+			def vipHostname = loadBalancerInstance.vipHostname
+			def vipProtocol = loadBalancerInstance.vipProtocol
+			def vipMode = loadBalancerInstance.vipMode
+			def vipPort = loadBalancerInstance.vipPort
+			def servicePort = loadBalancerInstance.servicePort
+			def backendPort = loadBalancerInstance.backendPort
+			def vipShared = loadBalancerInstance.vipShared
+			def vipDirectAddress = loadBalancerInstance.vipDirectAddress
 			//ssl config
-			def sslCert = instanceConfig.sslCert
+			def sslCert = loadBalancerInstance.sslCert
 			def sslEnabled = sslCert != null
-			def partition = instanceConfig.partition
+			def partition = loadBalancerInstance.partition
 			//base api config
 			def apiConfig = getConnectionBase(loadBalancer)
 			//do the deletes
 			def keepGoing = true
 			//naming
 			def removeOpts = [:]
-			def firstContainer = instance.containers?.size() > 0 ? instance.containers.first() : null
-			def namingConfig = lbSvc.buildNamingConfig(firstContainer, removeOpts, null)
+            def firstServer = serverGroup.servers.first()
+			def namingConfig = lbSvc.buildNamingConfig(firstServer, [:], loadBalancerInstance)
 			//results
 			def deleteResults
 			//remove the virtual server - todo handle shared vips
-			def virtualServerName = lbSvc.buildVirtualServerName(instanceConfig.virtualServiceName, instanceConfig.id, instanceConfig.vipName, sslEnabled, namingConfig)
+			def virtualServerName = lbSvc.buildVirtualServerName(loadBalancerInstance.virtualServiceName, loadBalancerInstance.id, loadBalancerInstance.vipName, sslEnabled, namingConfig)
 			def virtualServerConfig = apiConfig + [name:virtualServerName, vipAddress:vipAddress, vipPort:vipPort, partition:partition]
 			//load the virtual server
 			def policyName = BigIpUtility.generatePolicyName(loadBalancerInstance)
@@ -3027,42 +3100,22 @@ class BigIpProvider implements LoadBalancerProvider {
 			}
 			//remove servers if nothing aimed at them
 			if(keepGoing == true) {
-				def serverIdList = lbSvc.getLoadBalancerServerIds(loadBalancer, instanceConfig.id).blockingSubscribe()
-				instance?.containers?.findAll{ctr -> ctr.inService}?.each { container ->
-					namingConfig = lbSvc.buildNamingConfig(container, removeOpts, null)
-					def serverMatch = serverIdList.find { it == container.server.id }
-					if(!serverMatch) {
-						def serverName = lbSvc.buildServerName(instanceConfig.serverName, container.server.id, namingConfig)
-						def serverConfig = apiConfig + [name:serverName, authToken:virtualServerConfig.authToken, partition:partition]
-						def deleteResult = deleteServer(serverConfig)
-						log.debug("delete server results: {}", deleteResult)
-					} else {
-						//remove monitor?
-					}
-				}
+                def serverIds = serverGroup.getConfigProperty('deleteServerIds')
+                for(serverId in serverIds){
+                    def serverName = "morpheus-server-${serverId}"
+                    def serverConfig = apiConfig + [name:serverName, authToken:virtualServerConfig.authToken, partition:partition]
+					def deleteResult = deleteServer(serverConfig)
+					log.debug("delete server results: {}", deleteResult)
 
-				serverGroup.servers?.each { server ->
-					namingConfig = lbSvc.buildNamingConfig(server, removeOpts, null)
-					def serverMatch = serverIdList.find { it == server.id }
-					if(!serverMatch) {
-						def serverName = lbSvc.buildServerName(instanceConfig.serverName, server.id, namingConfig)
-						def serverConfig = apiConfig + [name:serverName, authToken:virtualServerConfig.authToken, partition:partition]
-						def deleteResult = deleteServer(serverConfig)
-						log.debug("delete server results: {}", deleteResult)
-					} else {
-						//remove monitor?
-					}
-				}
+                }
 			}
 			//remove the health monitor
-			if(instanceConfig.monitor == null) {
-				def healthMonitorName = BigIpUtility.buildHealthMonitorName(instanceConfig.id, servicePort, sslEnabled)
+			if(loadBalancerInstance.monitor) {
+				def healthMonitorName = BigIpUtility.buildHealthMonitorName(loadBalancerInstance.id, servicePort, sslEnabled)
 				if(keepGoing == true) {
 					def healthMonitorConfig = apiConfig + [name:healthMonitorName, authToken:virtualServerConfig.authToken, partition:partition]
 					deleteResults = deleteHealthMonitor(healthMonitorConfig)
-					if(deleteResults.success != true) {
-						rtn.success = false
-						keepGoing = false
+					if(deleteResults.success != true) {     
 						rtn.status = deleteResults.status
 						rtn.msg = 'failed to delete health monitor: ' + deleteResults.message
 						rtn.message = deleteResults.message
@@ -3373,6 +3426,11 @@ class BigIpProvider implements LoadBalancerProvider {
 			else {
 				profiles << [name: 'http']
 			}
+
+            if(opts.noProfiles){
+                profiles = []
+            }
+
 			//json data
 			def data = [
 				name:opts.name,
