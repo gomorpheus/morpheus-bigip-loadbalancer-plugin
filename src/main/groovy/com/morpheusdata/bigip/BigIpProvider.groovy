@@ -578,7 +578,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			required:false,
 			inputType:OptionType.InputType.TEXT
 		)
-		instanceOptionTypes << new OptionType(
+		/* instanceOptionTypes << new OptionType(
 			name:'vipPool',
 			code:'plugin.bigip.instance.vipPool',
 			fieldName:'vipPool',
@@ -587,11 +587,12 @@ class BigIpProvider implements LoadBalancerProvider {
 			fieldLabel:'VIP Pool',
 			required:false,
 			editable:true,
+			enabled:false,
 			helpBlock:'Use a pool to acquire a VIP address',
 			defaultValue:'none',
 			inputType:OptionType.InputType.SELECT,
 			optionSource:'vipNetworkPools'
-		)
+		) */
 		instanceOptionTypes << new OptionType(
 			name:'vipPort',
 			code:'plugin.bigip.instance.vipPort',
@@ -730,7 +731,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			required:false,
 			inputType:OptionType.InputType.TEXT
 		)
-		virtualServerOptions << new OptionType(
+		/* virtualServerOptions << new OptionType(
 			name:'vipPool',
 			code:'plugin.bigip.virtualService.vipPool',
 			fieldName:'vipPool',
@@ -739,11 +740,12 @@ class BigIpProvider implements LoadBalancerProvider {
 			fieldLabel:'VIP Pool',
 			required:false,
 			editable:true,
+			enabled:false,
 			helpBlock:'Use a pool to acquire a VIP address',
 			defaultValue:'none',
 			inputType:OptionType.InputType.SELECT,
 			optionSource:'vipNetworkPools'
-		)
+		) */
 		virtualServerOptions << new OptionType(
 			name:'vipPort',
 			code:'plugin.bigip.virtualService.vipPort',
