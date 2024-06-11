@@ -2375,7 +2375,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			if(firstContainer) {
 				namingConfig = lbSvc.buildNamingConfig(firstContainer, opts, null)
 			} else if(serverGroup?.servers?.size() > 0) {
-				namingConfig = lbSvc.buildNamingConfig(serverGroup?.servers.first(), opts, loadBalancerInstance)
+				namingConfig = lbSvc.buildNamingConfig(serverGroup.servers.first(), opts, loadBalancerInstance)
 			}
 
 			//results
@@ -2417,7 +2417,7 @@ class BigIpProvider implements LoadBalancerProvider {
 						rtn.results = createResults
 					}
 				}
-				serverGroup.servers?.each { server ->
+				serverGroup?.servers?.each { server ->
 
 					namingConfig = lbSvc.buildNamingConfig(server, opts, loadBalancerInstance)
 					def serverName = lbSvc.buildServerName(loadBalancer.serverName, server.id, namingConfig)
