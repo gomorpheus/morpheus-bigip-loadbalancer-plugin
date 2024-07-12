@@ -2347,7 +2347,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			def vipHostname = loadBalancerInstance.vipHostname
 			def vipProtocol = loadBalancerInstance.vipProtocol
 			def vipMode = loadBalancerInstance.vipMode
-			def vipPort = loadBalancerInstance.vipPort
+			def vipPort = loadBalancerInstance.servicePort
 			def vipBalance = loadBalancerInstance.vipBalance
 			def servicePort = loadBalancerInstance.servicePort
 			def backendPort = loadBalancerInstance.backendPort
@@ -2576,7 +2576,10 @@ class BigIpProvider implements LoadBalancerProvider {
 			rtn.error = 'failed to create load balancer instance ' + e.message
 			rtn.success = false
 		}
-		log.debug("addInstance: ${rtn}")
+
+		if (!rtn.success) {
+			log.error("addInstance: ${rtn}")
+		}
 		return rtn
 	}
 
@@ -2596,6 +2599,7 @@ class BigIpProvider implements LoadBalancerProvider {
 				def removeResults = removeInstance(opts.activeConfig, instance.instance)
 				if(removeResults.success == true) {
 					def configMap = instance.configMap
+					opts.remove('activeConfig')
 					configMap.options = opts
 					instance.setConfigMap(configMap)
 					def addResults = addInstance(instance)
@@ -4002,7 +4006,7 @@ class BigIpProvider implements LoadBalancerProvider {
 		def rtn = [success:false, authToken:params.authToken]
 		def endpointPath = "${params.path}/tm/ltm/policy"
 		def data = [
-			name:"/${params.partition ?: BigIpUtility.BIGIP_PARTITION}/Drafts/${params.policyName}",
+			name:"/${params.partition ?: BigIpUtility.BIGIP_PARTITION}/Drafts/${params.policyName}".toString(),
 			command:'publish'
 		]
 		def reqParams = [
@@ -4341,7 +4345,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			def endpointPath = BigIpUtility.buildApiPath("${opts.path}/tm/ltm/monitor/", null, null, serviceType)
 			def data = [
 				name:opts.name,
-				destination:serviceDetination,
+				destination:serviceDetination.toString(),
 				description:opts.description,
 				partition:opts.partition
 			]
@@ -4366,6 +4370,9 @@ class BigIpProvider implements LoadBalancerProvider {
 			if (resp.success) {
 				rtn.healthMonitor = resp.data
 				rtn.success = true
+			}
+			else {
+				log.error("Failed to create health monitor with data: ${data}")
 			}
 		}
 		return rtn
@@ -4536,7 +4543,7 @@ class BigIpProvider implements LoadBalancerProvider {
 		def endpointPath = "${opts.path}/tm/ltm/pool/${poolName}"
 		def members = []
 		opts.members.each { member ->
-			members << [name:"${member.externalId ?: "/${member.partition}/${member.name}"}:${member.port ?: opts.port}"]
+			members << [name:"${member.externalId ?: "/${member.partition}/${member.name}"}:${member.port ?: opts.port}".toString()]
 		}
 		def data = [members:members]
 		//add monitor
@@ -4557,6 +4564,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			rtn.members = results.data
 		}
 		else {
+			log.error("Failed to add pool members with data: ${data}")
 			rtn.msg = results.data?.message ?: results.errors?.error ?: results.msg
 		}
 		return rtn
@@ -4574,7 +4582,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			def members = []
 			opts.members.each { member ->
 				def nodeName = "${member.externalId ?: BigIpUtility.buildPartitionedName(member, '/')}"
-				members << [name:"${nodeName}:${member.port ?: opts.port}"]
+				members << [name:"${nodeName}:${member.port ?: opts.port}".toString()]
 			}
 			def data = [members:members]
 			//add monitor
