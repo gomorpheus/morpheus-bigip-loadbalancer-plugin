@@ -1,14 +1,13 @@
 package com.morpheusdata.bigip.sync
 
 import com.morpheusdata.bigip.BigIpPlugin
-import com.morpheusdata.core.MorpheusContext
+import com.morpheusdata.core.data.DataFilter
+import com.morpheusdata.core.data.DataQuery
 import com.morpheusdata.core.util.SyncTask
 import com.morpheusdata.model.NetworkLoadBalancer
 import com.morpheusdata.model.NetworkLoadBalancerInstance
 import com.morpheusdata.model.NetworkLoadBalancerPolicy
 import com.morpheusdata.model.NetworkLoadBalancerProfile
-import com.morpheusdata.model.NetworkLoadBalancerRule
-import com.morpheusdata.model.ReferenceData
 import com.morpheusdata.model.projection.LoadBalancerInstanceIdentityProjection
 import com.morpheusdata.model.projection.LoadBalancerPolicyIdentityProjection
 import groovy.util.logging.Slf4j
@@ -33,13 +32,18 @@ class InstanceSync extends BigIPEntitySync {
 
 		try {
 			// get the load balancer instance service to interact with database
-			def svc = morpheusContext.loadBalancer.instance
+			def svc = morpheusContext.async.loadBalancer.instance
 
 			// grab master items from the bigip api
 			def apiItems = plugin.provider.listVirtualServers(loadBalancer)
 
 			// Add sync logic for adds/updates/removes
-			Observable domainRecords = svc.listSyncProjections(loadBalancer.id)
+			Observable<LoadBalancerInstanceIdentityProjection> domainRecords = svc.listIdentityProjections(
+				new DataQuery().withFilters(
+					new DataFilter('loadbalancer.id', loadBalancer.id),
+					new DataFilter('status', 'ok'),
+				)
+			)
 			SyncTask<LoadBalancerInstanceIdentityProjection, Map, NetworkLoadBalancerInstance> syncTask = new SyncTask<>(domainRecords, apiItems.virtualServers)
 			syncTask.addMatchFunction { LoadBalancerInstanceIdentityProjection domainItem, Map cloudItem ->
 				return (domainItem.externalId == cloudItem.fullPath || (domainItem.vipAddress == cloudItem.vipAddress && domainItem.vipPort == cloudItem.vipPort))
@@ -54,7 +58,7 @@ class InstanceSync extends BigIPEntitySync {
 				for (instance in addItems) {
 					def addConfig = [internalId:instance.selfLink, externalId:instance.fullPath, vipAddress:instance.vipAddress,
 									 active:instance.enabled, vipProtocol:instance.ipProtocol, vipPort:instance.vipPort,
-									 vipName:instance.name, loadBalancer:loadBalancer, partition:instance.partition]
+									 vipName:instance.name, loadBalancer:loadBalancer, partition:instance.partition, status:'ok']
 					def add = new NetworkLoadBalancerInstance(addConfig)
 					add.setConfigMap(instance)
 
