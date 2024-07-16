@@ -2347,7 +2347,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			def vipHostname = loadBalancerInstance.vipHostname
 			def vipProtocol = loadBalancerInstance.vipProtocol
 			def vipMode = loadBalancerInstance.vipMode
-			def vipPort = loadBalancerInstance.servicePort
+			def vipPort = loadBalancerInstance.vipPort
 			def vipBalance = loadBalancerInstance.vipBalance
 			def servicePort = loadBalancerInstance.servicePort
 			def backendPort = loadBalancerInstance.backendPort
