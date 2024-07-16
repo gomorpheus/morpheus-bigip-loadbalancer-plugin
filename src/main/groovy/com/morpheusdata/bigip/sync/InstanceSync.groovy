@@ -40,7 +40,7 @@ class InstanceSync extends BigIPEntitySync {
 			// Add sync logic for adds/updates/removes
 			Observable<LoadBalancerInstanceIdentityProjection> domainRecords = svc.listIdentityProjections(
 				new DataQuery().withFilters(
-					new DataFilter('loadbalancer.id', loadBalancer.id),
+					new DataFilter('loadBalancer.id', loadBalancer.id),
 					new DataFilter('status', 'ok'),
 				)
 			)
