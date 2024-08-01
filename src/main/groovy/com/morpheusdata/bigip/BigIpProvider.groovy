@@ -3755,7 +3755,7 @@ class BigIpProvider implements LoadBalancerProvider {
 	def installSslCert(NetworkLoadBalancerInstance nlbi, AccountCertificate cert) {
 		def certSvc = morpheus.async.loadBalancer.certificate
 		def output = [success:true]
-		def token = certSvc.createCertInstallToken(cert, "${certSvc.sslInstallTokenName}.${nlbi.id}").blockingGet()
+		def token = certSvc.createCertInstallToken(cert, "${certSvc.sslInstallTokenName}.${nlbi.id}", BigIpUtility.BIGIP_REFDATA_CATEGORY).blockingGet()
 		def apiConfig = getConnectionBase(nlbi.loadBalancer)
 		def rtn = installCert(apiConfig + [certName:BigIpUtility.buildSslCertName(cert), token:token, nlbi:nlbi.id])
 
