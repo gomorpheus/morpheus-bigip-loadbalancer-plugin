@@ -644,6 +644,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			displayOrder:9,
 			fieldLabel:'SSL Certificate',
 			required:true,
+            defaultValue: 0,
 			inputType:OptionType.InputType.SELECT,
 			optionSource:'accountSslCertificate'
 		)
