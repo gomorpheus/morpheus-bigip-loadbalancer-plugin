@@ -102,12 +102,25 @@ class BigIpOptionSourceProvider implements OptionSourceProvider {
 
 	def bigIpPluginVirtualServerPools(input) {
 		def params = [Object[]].any { it.isAssignableFrom(input.getClass()) } ? input.first() : input
-		def lbInstance = params.domain
-		def loadBalancer = lbInstance?.loadBalancer
-		def loadBalancerId = loadBalancer ? loadBalancer.id : params.loadBalancerId
+		def loadBalancerId
+		if (params.domain?.loadBalancerId) {
+			loadBalancerId = params.domain.loadBalancerId
+		} else if (params.domain?.loadBalancer?.id) {
+			loadBalancerId = params.domain?.loadBalancer?.id
+		} else if (params.loadBalancer?.id) {
+			if (params.loadBalancer.id.getClass().isArray())
+				loadBalancerId = params.loadBalancer.id[0]
+			else
+				loadBalancerId = params.loadBalancer.id
+		} else if (params.loadBalancerId) {
+			if (params.loadBalancerId.getClass().isArray())
+				loadBalancerId = params.loadBalancerId[0]
+			else
+				loadBalancerId = params.loadBalancerId
+		}
 		def pools = []
 		if(loadBalancerId) {
-			morpheusContext.loadBalancer.pool.listSyncProjections(loadBalancerId).blockingSubscribe { pool ->
+			morpheusContext.loadBalancer.pool.listSyncProjections(loadBalancerId.toLong()).blockingSubscribe { pool ->
 				pools << [name: pool.name, value: pool.id]
 			}
 		}

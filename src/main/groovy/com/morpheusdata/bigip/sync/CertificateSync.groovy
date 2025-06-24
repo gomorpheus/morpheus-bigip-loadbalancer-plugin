@@ -50,9 +50,11 @@ class CertificateSync extends BigIPEntitySync {
 				def adds = []
 				for (certificate in addItems) {
 					log.debug("certificate: ${certificate}")
+					def refType = loadBalancer.cloud ? 'ComputeZone' : 'LoadBalancer'
+					def refId = loadBalancer.cloud ? loadBalancer.cloud.id : loadBalancer.id
 					def add = new ReferenceData(account:loadBalancer.account, code: "${objCategory}.${certificate.name}", category: objCategory,
 						name: certificate.name, type: certificate.kind, value: certificate.fullPath, keyValue: certificate.checksum,
-						refType: 'ComputeZone', refId: "${loadBalancer.cloud.id}", externalId:certificate.fullPath)
+						refType: refType, refId: "${refId}", externalId:certificate.fullPath)
 
 					adds << add
 				}
