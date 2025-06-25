@@ -85,12 +85,18 @@ class BigIpOptionSourceProvider implements OptionSourceProvider {
 		def loadBalancerId
 		if (params.domain?.loadBalancerId) {
 			loadBalancerId = params.domain.loadBalancerId
-		}
-		else if (params.loadBalancer?.id) {
+		} else if (params.domain?.loadBalancer?.id) {
+			loadBalancerId = params.domain?.loadBalancer?.id
+		} else if (params.loadBalancer?.id) {
 			if (params.loadBalancer.id.getClass().isArray())
 				loadBalancerId = params.loadBalancer.id[0]
 			else
 				loadBalancerId = params.loadBalancer.id
+		} else if (params.loadBalancerId) {
+			if (params.loadBalancerId.getClass().isArray())
+				loadBalancerId = params.loadBalancerId[0]
+			else
+				loadBalancerId = params.loadBalancerId
 		}
 		def partitionSvc = morpheusContext.loadBalancer.partition
 		def options = []
