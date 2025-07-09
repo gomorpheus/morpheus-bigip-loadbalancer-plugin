@@ -13,3 +13,6 @@ build/
 .gradle
 .DS_Store
 .idea/
+
+# IntelliJ IDEA
+*.iml
