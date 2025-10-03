@@ -37,7 +37,7 @@ class PartitionSync extends BigIPEntitySync {
 
 			// Grab existing domain records
 			def objCategory = BigIpUtility.getObjCategory('partition', loadBalancer)
-			Observable domainRecords = svc.listSyncProjections(loadBalancer.id, objCategory)
+			def domainRecords = svc.listSyncProjections(loadBalancer.id, objCategory)
 
 			SyncTask<ReferenceDataSyncProjection, Map, ReferenceData> syncTask = new SyncTask<>(domainRecords, apiItems.partitions)
 			syncTask.addMatchFunction { ReferenceDataSyncProjection domainItem, Map cloudItem ->
