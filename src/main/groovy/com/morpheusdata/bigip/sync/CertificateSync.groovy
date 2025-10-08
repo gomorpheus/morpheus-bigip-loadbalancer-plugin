@@ -2,13 +2,11 @@ package com.morpheusdata.bigip.sync
 
 import com.morpheusdata.bigip.BigIpPlugin
 import com.morpheusdata.bigip.util.BigIpUtility
-import com.morpheusdata.core.MorpheusContext
 import com.morpheusdata.core.util.SyncTask
 import com.morpheusdata.model.NetworkLoadBalancer
 import com.morpheusdata.model.ReferenceData
 import com.morpheusdata.model.projection.ReferenceDataSyncProjection
 import groovy.util.logging.Slf4j
-import io.reactivex.Observable
 
 @Slf4j
 class CertificateSync extends BigIPEntitySync {
@@ -36,7 +34,7 @@ class CertificateSync extends BigIPEntitySync {
 			// Add sync logic for adds/updates/removes
 			def objCategory = BigIpUtility.getObjCategory('cert', loadBalancer.id)
 
-			Observable domainRecords = svc.listSyncProjections(loadBalancer.id, objCategory)
+			def domainRecords = svc.listSyncProjections(loadBalancer.id, objCategory)
 			SyncTask<ReferenceDataSyncProjection, Map, ReferenceData> syncTask = new SyncTask<>(domainRecords, apiItems.certificates)
 			syncTask.addMatchFunction { ReferenceDataSyncProjection domainItem, Map cloudItem ->
 				return domainItem.externalId == cloudItem.fullPath

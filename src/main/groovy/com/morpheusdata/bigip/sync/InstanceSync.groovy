@@ -1,18 +1,14 @@
 package com.morpheusdata.bigip.sync
 
 import com.morpheusdata.bigip.BigIpPlugin
-import com.morpheusdata.core.MorpheusContext
 import com.morpheusdata.core.util.SyncTask
 import com.morpheusdata.model.NetworkLoadBalancer
 import com.morpheusdata.model.NetworkLoadBalancerInstance
 import com.morpheusdata.model.NetworkLoadBalancerPolicy
 import com.morpheusdata.model.NetworkLoadBalancerProfile
-import com.morpheusdata.model.NetworkLoadBalancerRule
-import com.morpheusdata.model.ReferenceData
 import com.morpheusdata.model.projection.LoadBalancerInstanceIdentityProjection
-import com.morpheusdata.model.projection.LoadBalancerPolicyIdentityProjection
 import groovy.util.logging.Slf4j
-import io.reactivex.Observable
+import io.reactivex.rxjava3.core.Observable
 
 @Slf4j
 class InstanceSync extends BigIPEntitySync {
@@ -39,7 +35,7 @@ class InstanceSync extends BigIPEntitySync {
 			def apiItems = plugin.provider.listVirtualServers(loadBalancer)
 
 			// Add sync logic for adds/updates/removes
-			Observable domainRecords = svc.listSyncProjections(loadBalancer.id)
+			def domainRecords = svc.listSyncProjections(loadBalancer.id)
 			SyncTask<LoadBalancerInstanceIdentityProjection, Map, NetworkLoadBalancerInstance> syncTask = new SyncTask<>(domainRecords, apiItems.virtualServers)
 			syncTask.addMatchFunction { LoadBalancerInstanceIdentityProjection domainItem, Map cloudItem ->
 				return (domainItem.externalId == cloudItem.fullPath || (domainItem.vipAddress == cloudItem.vipAddress && domainItem.vipPort == cloudItem.vipPort))
@@ -119,7 +115,7 @@ class InstanceSync extends BigIPEntitySync {
 			sourceProfiles = []
 
 		SyncTask<NetworkLoadBalancerProfile, Map, NetworkLoadBalancerProfile> syncTask = new SyncTask<>(
-			Observable.fromIterable(existingVip.profiles), sourceProfiles
+				Observable.fromIterable(existingVip.profiles), sourceProfiles
 		)
 		syncTask.addMatchFunction { NetworkLoadBalancerProfile existingItem, Map syncItem ->
 			return existingItem.externalId == syncItem.fullPath

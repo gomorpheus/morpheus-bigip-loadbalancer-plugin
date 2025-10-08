@@ -566,21 +566,34 @@ class BigIpProvider implements LoadBalancerProvider {
 			inputType:OptionType.InputType.TEXT
 		)
 		instanceOptionTypes << new OptionType(
+			name:'vipPool',
+			code:'plugin.bigip.instance.vipPool',
+			fieldName:'vipPool',
+			fieldContext:'domain',
+			displayOrder:3,
+			fieldLabel:'VIP Pool',
+			required:false,
+			editable: false,
+			inputType:OptionType.InputType.SELECT,
+			optionSource:'vipNetworkPools'
+		)
+		instanceOptionTypes << new OptionType(
 			name:'vipAddress',
 			code:'plugin.bigip.instance.vipAddress',
 			fieldName:'vipAddress',
 			fieldContext:'domain',
-			displayOrder:3,
+			displayOrder:4,
 			fieldLabel:'VIP Address',
-			required:true,
-			inputType:OptionType.InputType.TEXT
+			required:false,
+			inputType:OptionType.InputType.TEXT,
+			visibleOnCode: 'loadBalancer.vipPool:(^$|No Pool)',
 		)
 		instanceOptionTypes << new OptionType(
 			name:'vipPort',
 			code:'plugin.bigip.instance.vipPort',
 			fieldName:'vipPort',
 			fieldContext:'domain',
-			displayOrder:4,
+			displayOrder:5,
 			fieldLabel:'VIP Port',
 			required:true,
 			inputType:OptionType.InputType.TEXT
@@ -590,7 +603,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.instance.persistence',
 			fieldName:'vipSticky',
 			fieldContext:'domain',
-			displayOrder:5,
+			displayOrder:6,
 			fieldLabel:'Persistence',
 			required:false,
 			inputType:OptionType.InputType.SELECT,
@@ -601,7 +614,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.instance.balanceMode',
 			fieldName:'vipBalance',
 			fieldContext:'domain',
-			displayOrder:6,
+			displayOrder:7,
 			fieldLabel:'Balance Mode',
 			required:true,
 			inputType:OptionType.InputType.SELECT,
@@ -612,7 +625,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.instance.monitor',
 			fieldName:'monitor',
 			fieldContext:'domain',
-			displayOrder:7,
+			displayOrder:8,
 			fieldLabel:'Monitor',
 			required:false,
 			inputType:OptionType.InputType.SELECT,
@@ -623,7 +636,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.instance.sslCert',
 			fieldName:'sslCert',
 			fieldContext:'domain',
-			displayOrder:8,
+			displayOrder:9,
 			fieldLabel:'SSL Certificate',
 			required:true,
 			inputType:OptionType.InputType.SELECT,
@@ -634,7 +647,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			code:'plugin.bigip.instance.sslRedirectMode',
 			fieldName:'sslRedirectMode',
 			fieldContext:'domain',
-			displayOrder:9,
+			displayOrder:10,
 			fieldLabel:'SSL Redirect Mode',
 			required:false,
 			inputType:OptionType.InputType.SELECT,
@@ -2082,6 +2095,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			virtualServerConfig.active = loadBalancerInstance.active
 			//destination
 			virtualServerConfig.vipAddress = loadBalancerInstance.vipAddress
+			virtualServerConfig.vipPool = loadBalancerInstance.vipPool
 			virtualServerConfig.vipPort = loadBalancerInstance.vipPort
 			virtualServerConfig.destination = "/${virtualServerConfig.partition}/" + loadBalancerInstance.vipAddress + ':' + (loadBalancerInstance.vipPort ?: '80')
 			//source
@@ -2192,6 +2206,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			virtualServerConfig.partition = loadBalancerInstance.partition
 			//destination
 			virtualServerConfig.vipAddress = loadBalancerInstance.vipAddress
+			virtualServerConfig.vipPool = loadBalancerInstance.vipPool
 			virtualServerConfig.vipPort = loadBalancerInstance.vipPort
 			virtualServerConfig.destination = "/${loadBalancerInstance.partition}/" + loadBalancerInstance.vipAddress + ':' + (loadBalancerInstance.vipPort ?: '80')
 			//source
@@ -2279,8 +2294,12 @@ class BigIpProvider implements LoadBalancerProvider {
 			if(!instance.vipProtocol) {
 				rtn.errors.vipProtocol = 'Protocol is required'
 			}
-			if(!instance.vipAddress) {
-				rtn.errors.vipAddress = 'Vip Address is required'
+			if(!instance.vipAddress && !instance.vipPool)
+			{
+				rtn.errors.vipAddress = 'Vip Address or Vip Pool is required'
+			}
+			if(instance.vipAddress != null && instance.vipPool != null){
+				rtn.errors.vipAddress = 'Only one of Vip Address or Vip Pool can be set'
 			}
 			if(!instance.vipPort) {
 				rtn.errors.vipPort = 'Vip Port is required'
@@ -2308,6 +2327,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			def instance = loadBalancerInstance.instance
 			//vip details
 			def vipAddress = loadBalancerInstance.vipAddress
+			def vipPool = loadBalancerInstance.vipPool
 			def vipHostname = loadBalancerInstance.vipHostname
 			def vipProtocol = loadBalancerInstance.vipProtocol
 			def vipMode = loadBalancerInstance.vipMode
@@ -2413,7 +2433,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			// TODO: continue with profiles
 			def virtualServerName = lbSvc.buildVirtualServerName(loadBalancer.virtualServiceName, loadBalancerInstance.id, loadBalancerInstance.vipName, sslEnabled, namingConfig)
 			if(keepGoing == true) {
-				def virtualServerConfig = apiConfig + [name:virtualServerName, vipAddress:vipAddress,
+				def virtualServerConfig = apiConfig + [name:virtualServerName, vipAddress:vipAddress, vipPool:vipPool,
 													   vipPort:vipPort, persist:vipSticky, poolName:poolName, profiles:[], partition:partition]
 				//ssl
 				if(sslEnabled) {
@@ -2643,7 +2663,8 @@ class BigIpProvider implements LoadBalancerProvider {
 		def rtn = ServiceResponse.prepare() //deleted is if the gorm objects were removed - not the vip
 		try {
 			def activeConfig = [id:loadBalancerInstance.id, loadBalancer:loadBalancerInstance.loadBalancer,
-								vipAddress:loadBalancerInstance.vipAddress, vipPort:loadBalancerInstance.vipPort, vipBalance:loadBalancerInstance.vipBalance,
+								vipAddress:loadBalancerInstance.vipAddress, vipPool:loadBalancerInstance.vipPool,
+								vipPort:loadBalancerInstance.vipPort, vipBalance:loadBalancerInstance.vipBalance,
 								vipHostname:loadBalancerInstance.vipHostname, vipName:loadBalancerInstance.vipName,
 								vipProtocol:loadBalancerInstance.vipProtocol, vipSticky:loadBalancerInstance.vipSticky,
 								vipShared:loadBalancerInstance.vipShared, sslCert:loadBalancerInstance.sslCert,
@@ -2674,6 +2695,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			log.info("Removing VIP from LoadBalancer: {}", instanceConfig.loadBalancer?.name)
 			//vip details
 			def vipAddress = instanceConfig.vipAddress
+			def vipPool = instanceConfig.vipPool
 			def vipHostname = instanceConfig.vipHostname
 			def vipProtocol = instanceConfig.vipProtocol
 			def vipMode = instanceConfig.vipMode
@@ -2699,7 +2721,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			def deleteResults
 			//remove the virtual server - todo handle shared vips
 			def virtualServerName = lbSvc.buildVirtualServerName(instanceConfig.virtualServiceName, instanceConfig.id, instanceConfig.vipName, sslEnabled, namingConfig)
-			def virtualServerConfig = apiConfig + [name:virtualServerName, vipAddress:vipAddress, vipPort:vipPort, partition:partition]
+			def virtualServerConfig = apiConfig + [name:virtualServerName, vipAddress:vipAddress, vipPool:vipPool, vipPort:vipPort, partition:partition]
 			//load the virtual server
 			def policyName = BigIpUtility.generatePolicyName(loadBalancerInstance)
 			def virtualServerResults = vipExists(virtualServerConfig)
