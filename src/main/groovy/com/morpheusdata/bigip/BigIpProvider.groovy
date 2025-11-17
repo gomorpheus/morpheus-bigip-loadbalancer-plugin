@@ -575,7 +575,7 @@ class BigIpProvider implements LoadBalancerProvider {
 			required:false,
 			editable: false,
 			inputType:OptionType.InputType.SELECT,
-			optionSource:'vipNetworkPools'
+			optionSource:'filteredVipNetworkPools'
 		)
 		instanceOptionTypes << new OptionType(
 			name:'vipAddress',
