@@ -2,13 +2,14 @@ package com.morpheusdata.bigip.sync
 
 import com.morpheusdata.bigip.BigIpPlugin
 import com.morpheusdata.bigip.util.BigIpUtility
+import com.morpheusdata.core.MorpheusContext
 import com.morpheusdata.core.util.SyncTask
 import com.morpheusdata.model.NetworkLoadBalancer
 import com.morpheusdata.model.NetworkLoadBalancerMember
 import com.morpheusdata.model.NetworkLoadBalancerPool
 import com.morpheusdata.model.projection.LoadBalancerPoolIdentityProjection
 import groovy.util.logging.Slf4j
-import io.reactivex.rxjava3.core.Observable
+import io.reactivex.Observable
 
 @Slf4j
 class PoolSync extends BigIPEntitySync {
@@ -34,7 +35,7 @@ class PoolSync extends BigIPEntitySync {
 			def apiItems = plugin.provider.listPools(loadBalancer)
 
 			// Add sync logic for adds/updates/removes
-			def domainRecords = svc.listSyncProjections(loadBalancer.id)
+			Observable domainRecords = svc.listSyncProjections(loadBalancer.id)
 			SyncTask<LoadBalancerPoolIdentityProjection, Map, NetworkLoadBalancerPool> syncTask = new SyncTask<>(domainRecords, apiItems.pools)
 			syncTask.addMatchFunction { LoadBalancerPoolIdentityProjection domainItem, Map cloudItem ->
 				return domainItem.externalId == cloudItem.fullPath
