@@ -2315,7 +2315,7 @@ class BigIpProvider implements LoadBalancerProvider {
 				rtn.errors.vipProtocol = 'Protocol is required'
 			}
 			if(!instance.vipAddress) {
-				if (instance.vipPool == null) {
+				if (instance.vipPool == 'none' || instance.vipPool == null) {
 					rtn.errors.vipAddress = 'Vip address must be specified, or a vip IP pool must be selected'
 				}
 			}
