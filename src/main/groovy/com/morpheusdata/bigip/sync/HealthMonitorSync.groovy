@@ -19,9 +19,9 @@ class HealthMonitorSync extends BigIPEntitySync {
 	}
 
 	def execute() {
-		log.info("Syncing bigip health monitors")
+		log.debug("Syncing bigip health monitors")
 		if (!shouldExecute()) {
-			log.info('Skipping bigip health monitor sync')
+			log.debug('Skipping bigip health monitor sync')
 			return
 		}
 
@@ -97,7 +97,7 @@ class HealthMonitorSync extends BigIPEntitySync {
 			}.onDelete { List<LoadBalancerMonitorIdentityProjection> monitors ->
 				svc.bulkRemove(monitors).blockingGet()
 			}.start()
-			log.info('bigip health monitor sync complete')
+			log.debug('bigip health monitor sync complete')
 		}
 		catch (Throwable t) {
 			log.error("Failure in bigip health monitor sync: ${t.message}", t)

@@ -24,9 +24,9 @@ class InstanceSync extends BigIPEntitySync {
 	}
 
 	def execute() {
-		log.info("Syncing bigip virtual servers")
+		log.debug("Syncing bigip virtual servers")
 		if (!shouldExecute()) {
-			log.info('Skipping bigip virtual server sync')
+			log.debug('Skipping bigip virtual server sync')
 			return
 		}
 
@@ -104,7 +104,7 @@ class InstanceSync extends BigIPEntitySync {
 				// after removals, restart load balancer usage tracking
 				morpheusContext.loadBalancer.restartLoadBalancerUsage(loadBalancer.id, true)
 			}.start()
-			log.info('bigip virtual server sync complete')
+			log.debug('bigip virtual server sync complete')
 		}
 		catch (Throwable t) {
 			log.error("Failed to sync load balancer instance (virtual servers)", t)

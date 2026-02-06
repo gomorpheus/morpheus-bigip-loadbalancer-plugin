@@ -20,9 +20,9 @@ class IRuleSync extends BigIPEntitySync {
 	}
 
 	def execute() {
-		log.info("Syncing bigip iRules")
+		log.debug("Syncing bigip iRules")
 		if (!shouldExecute()) {
-			log.info('Skipping bigip iRule sync')
+			log.debug('Skipping bigip iRule sync')
 			return
 		}
 
@@ -61,7 +61,7 @@ class IRuleSync extends BigIPEntitySync {
 			}.onDelete { removeItems ->
 				svc.remove(removeItems).blockingGet()
 			}.start()
-			log.info("bigip iRule sync complete")
+			log.debug("bigip iRule sync complete")
 		}
 		catch (Throwable t) {
 			log.error("Failure in load balancer irule sync: ${t.message}", t)

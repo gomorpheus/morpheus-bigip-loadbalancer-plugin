@@ -22,9 +22,9 @@ class PartitionSync extends BigIPEntitySync {
 	}
 
 	def execute() {
-		log.info("Syncing bigip partitions")
+		log.debug("Syncing bigip partitions")
 		if (!shouldExecute()) {
-			log.info('Skipping bigip partition sync')
+			log.debug('Skipping bigip partition sync')
 			return
 		}
 
@@ -84,7 +84,7 @@ class PartitionSync extends BigIPEntitySync {
 			}.onDelete { List<ReferenceDataSyncProjection> refData ->
 				svc.remove(refData).blockingGet()
 			}.start()
-			log.info('bigip partition sync complete')
+			log.debug('bigip partition sync complete')
 		}
 		catch (Throwable t) {
 			log.error("Failure in bigip parition sync: ${t.message}", t)

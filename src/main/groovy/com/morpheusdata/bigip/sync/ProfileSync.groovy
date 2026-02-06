@@ -19,9 +19,9 @@ class ProfileSync extends BigIPEntitySync {
 		this.morpheusContext = plugin.morpheus
 	}
 	def execute() {
-		log.info("Syncing bigip profiles")
+		log.debug("Syncing bigip profiles")
 		if (!shouldExecute()) {
-			log.info('Skipping bigip profile sync')
+			log.debug('Skipping bigip profile sync')
 			return
 		}
 
@@ -75,7 +75,7 @@ class ProfileSync extends BigIPEntitySync {
 			}.onDelete { removeItems ->
 				svc.remove(removeItems).blockingGet()
 			}.start()
-			log.info("bigip profile sync complete")
+			log.debug("bigip profile sync complete")
 		}
 		catch (Throwable t) {
 			log.error("Failure in load balancer profile sync: ${t.message}", t)

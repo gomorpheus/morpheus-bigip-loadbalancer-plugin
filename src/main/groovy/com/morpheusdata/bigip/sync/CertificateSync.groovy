@@ -20,9 +20,9 @@ class CertificateSync extends BigIPEntitySync {
 	}
 
 	def execute() {
-		log.info("Syncing bigip ssl certs")
+		log.debug("Syncing bigip ssl certs")
 		if (!shouldExecute()) {
-			log.info('Skipping bigip certificate sync')
+			log.debug('Skipping bigip certificate sync')
 			return
 		}
 
@@ -64,7 +64,7 @@ class CertificateSync extends BigIPEntitySync {
 			}.onDelete { List<ReferenceDataSyncProjection> refData ->
 				svc.remove(refData).blockingGet()
 			}.start()
-			log.info('bigip certificate sync complete')
+			log.debug('bigip certificate sync complete')
 		}
 		catch (Throwable t) {
 			log.error("Unable to sync bigip certificates: ${t.message}", t)

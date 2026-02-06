@@ -21,9 +21,9 @@ class PoolSync extends BigIPEntitySync {
 	}
 
 	def execute() {
-		log.info("Syncing bigip pools")
+		log.debug("Syncing bigip pools")
 		if (!shouldExecute()) {
-			log.info('Skipping bigip pool sync')
+			log.debug('Skipping bigip pool sync')
 			return
 		}
 
@@ -77,7 +77,7 @@ class PoolSync extends BigIPEntitySync {
 			}.onDelete { removeItems ->
 				svc.remove(removeItems).blockingGet()
 			}.start()
-			log.info('bigip pool sync complete')
+			log.debug('bigip pool sync complete')
 		}
 		catch (Throwable t) {
 			log.error("Failure in load balancer pool sync: ${t.message}", t)
@@ -85,7 +85,7 @@ class PoolSync extends BigIPEntitySync {
 	}
 
 	protected syncPoolMembers(NetworkLoadBalancerPool pool, List poolMemberList) {
-		log.info("Syncing pool memebers for pool ${pool.name}: ${poolMemberList}")
+		log.debug("Syncing pool memebers for pool ${pool.name}: ${poolMemberList}")
 		def nodeSvc = morpheusContext.loadBalancer.node
 
 		SyncTask<NetworkLoadBalancerMember, Map, NetworkLoadBalancerMember> syncTask = new SyncTask<>(

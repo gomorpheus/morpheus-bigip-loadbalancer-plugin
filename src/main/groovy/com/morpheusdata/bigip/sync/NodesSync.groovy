@@ -19,9 +19,9 @@ class NodesSync extends BigIPEntitySync {
 	}
 
 	def execute() {
-		log.info("Starting bigip node sync")
+		log.debug("Starting bigip node sync")
 		if (!shouldExecute()) {
-			log.info('Skipping bigip node sync')
+			log.debug('Skipping bigip node sync')
 			return
 		}
 
@@ -92,7 +92,7 @@ class NodesSync extends BigIPEntitySync {
 			}.onDelete { List<LoadBalancerNodeIdentityProjection> nodes ->
 				svc.remove(nodes).blockingGet()
 			}.start()
-			log.info('bigip node sync complete')
+			log.debug('bigip node sync complete')
 		}
 		catch (Throwable t) {
 			log.error("Failure in bigip node sync: ${t.message}", t)

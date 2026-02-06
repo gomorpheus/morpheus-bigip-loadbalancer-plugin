@@ -20,9 +20,9 @@ class PersistenceSync extends BigIPEntitySync {
 	}
 
 	def execute() {
-		log.info("Syncing bigip persistence policies")
+		log.debug("Syncing bigip persistence policies")
 		if (!shouldExecute()) {
-			log.info('Skipping bigip persistence policy sync')
+			log.debug('Skipping bigip persistence policy sync')
 			return
 		}
 
@@ -82,7 +82,7 @@ class PersistenceSync extends BigIPEntitySync {
 			}.onDelete { removeItems->
 				svc.remove(removeItems).blockingGet()
 			}.start()
-			log.info('big ip persistence policy sync complete')
+			log.debug('big ip persistence policy sync complete')
 		}
 		catch (Throwable t) {
 			log.error("Failed to sync persistence policies from the LB: ${t.message}", t)

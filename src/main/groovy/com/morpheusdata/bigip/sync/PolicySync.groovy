@@ -21,9 +21,9 @@ class PolicySync extends BigIPEntitySync {
 	}
 
 	def execute() {
-		log.info("Syncing bigip policies")
+		log.debug("Syncing bigip policies")
 		if (!shouldExecute()) {
-			log.info('Skipping bigip policy sync')
+			log.debug('Skipping bigip policy sync')
 			return
 		}
 
@@ -93,7 +93,7 @@ class PolicySync extends BigIPEntitySync {
 			}.onDelete { removeItems->
 				svc.remove(removeItems).blockingGet()
 			}.start()
-			log.info('bigip policy sync complete')
+			log.debug('bigip policy sync complete')
 		}
 		catch (Throwable t) {
 			log.error("Failure in load balancer policy sync: ${t.message}", t)
@@ -101,7 +101,7 @@ class PolicySync extends BigIPEntitySync {
 	}
 
 	protected syncPolicyRules(NetworkLoadBalancerPolicy policy, List policyRuleList) {
-		log.info("Syncing policy rules for policy ${policy.name}: ${policyRuleList}")
+		log.debug("Syncing policy rules for policy ${policy.name}: ${policyRuleList}")
 		def changes = false
 		def poolSvc = morpheusContext.loadBalancer.pool
 

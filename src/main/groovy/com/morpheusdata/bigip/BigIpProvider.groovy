@@ -966,7 +966,7 @@ class BigIpProvider implements LoadBalancerProvider {
 	@Override
 	ServiceResponse refresh(NetworkLoadBalancer loadBalancer) {
 		ServiceResponse rtn = new ServiceResponse(success: false)
-		log.info "syncing load balancer: ${loadBalancer.name}"
+		log.debug "syncing load balancer: ${loadBalancer.name}"
 
 		try {
 			def apiUrl = getApiUrl(loadBalancer)
@@ -989,7 +989,7 @@ class BigIpProvider implements LoadBalancerProvider {
 				(new IRuleSync(this.plugin, loadBalancer)).execute()
 				(new InstanceSync(this.plugin, loadBalancer)).execute()
 
-				log.info("BigIP sync (${loadBalancer.name}) complete.")
+				log.debug("BigIP sync (${loadBalancer.name}) complete.")
 
 				// update status
 				morpheusContext.async.loadBalancer.updateLoadBalancerStatus(loadBalancer, 'ok', null)
