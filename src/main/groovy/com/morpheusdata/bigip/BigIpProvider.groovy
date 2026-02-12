@@ -113,7 +113,10 @@ class BigIpProvider implements LoadBalancerProvider {
 			fieldLabel:'Api Host',
 			required:true,
 			inputType:OptionType.InputType.TEXT,
-			fieldContext:'domain'
+			fieldContext:'domain',
+			fieldGroup: 'connectionDetails',
+			fieldGroupI18nCode: 'gomorpheus.label.connectionDetails',
+			groupExpand: true
 		)
 		OptionType apiPort = new OptionType(
 			name:'Port',
@@ -124,7 +127,10 @@ class BigIpProvider implements LoadBalancerProvider {
 			fieldLabel:'Api Port',
 			required:false,
 			inputType:OptionType.InputType.TEXT,
-			fieldContext:'domain'
+			fieldContext:'domain',
+			fieldGroup: 'connectionDetails',
+			fieldGroupI18nCode: 'gomorpheus.label.connectionDetails',
+			groupExpand: true
 		)
 		OptionType credential = new OptionType(
 			name:'credentials',
@@ -136,7 +142,10 @@ class BigIpProvider implements LoadBalancerProvider {
 			required:false,
 			inputType:OptionType.InputType.CREDENTIAL,
 			fieldContext:'credential',
-			config:JsonOutput.toJson(credentialTypes:['username-password']).toString()
+			config:JsonOutput.toJson(credentialTypes:['username-password']).toString(),
+			fieldGroup: 'connectionDetails',
+			fieldGroupI18nCode: 'gomorpheus.label.connectionDetails',
+			groupExpand: true
 		)
 		OptionType username = new OptionType(
 			name:'Username',
@@ -146,7 +155,11 @@ class BigIpProvider implements LoadBalancerProvider {
 			fieldLabel:'Username',
 			required:true,
 			inputType:OptionType.InputType.TEXT,
-			fieldContext:'domain'
+			localCredential: true,
+			fieldContext:'domain',
+			fieldGroup: 'connectionDetails',
+			fieldGroupI18nCode: 'gomorpheus.label.connectionDetails',
+			groupExpand: true
 		)
 		OptionType password = new OptionType(
 			name:'Password',
@@ -156,10 +169,88 @@ class BigIpProvider implements LoadBalancerProvider {
 			fieldLabel:'Password',
 			required:true,
 			inputType:OptionType.InputType.PASSWORD,
-			fieldContext:'domain'
+			localCredential: true,
+			fieldContext:'domain',
+			fieldGroup: 'connectionDetails',
+			fieldGroupI18nCode: 'gomorpheus.label.connectionDetails',
+			groupExpand: true
+		)
+		OptionType managementUrl = new OptionType(
+			name:'Management URL',
+			code:'plugin.bigip.managementUrl',
+			fieldName:'managementUrl',
+			displayOrder:12,
+			fieldLabel:'Management URL',
+			required:false,
+			inputType:OptionType.InputType.TEXT,
+			placeHolder: 'https://x.x.x.x:8443/xui/',
+			fieldContext:'domain',
+			fieldGroup: 'connectionDetails',
+			helpBlock: 'Warning! Using HTTP URLS are insecure and not recommended.',
+			fieldGroupI18nCode: 'gomorpheus.label.connectionDetails',
+			groupExpand: true
+		)
+		OptionType allowManualVipEntry = new OptionType(
+			name:'Allow Vip Entry',
+			code:'plugin.bigip.allowManualVipEntry',
+			fieldName:'allowManualVipEntry',
+			displayOrder:13,
+			fieldLabel:'Allow Vip Entry',
+			required:false,
+			inputType:OptionType.InputType.CHECKBOX,
+			fieldContext:'domain',
+			fieldGroup: 'advanced',
+		)
+		OptionType vipPools = new OptionType(
+			name:'Vip Pools',
+			code:'plugin.bigip.networkPools',
+			fieldName:'networkPools',
+			displayOrder:14,
+			fieldLabel:'Vip Pools',
+			required:false,
+			inputType:OptionType.InputType.TYPEAHEAD,
+			fieldContext:'domain',
+			fieldGroup: 'advanced',
+			optionSource: 'networkPools',
+			config:JsonOutput.toJson([browseEnabled:true, multiSelect:true]).toString(),
+
+		)
+		OptionType virtualName = new OptionType(
+			name:'Virtual Name',
+			code:'plugin.bigip.virtualServiceName',
+			fieldName:'virtualServiceName',
+			displayOrder:15,
+			fieldLabel:'Virtual Name',
+			required:false,
+			inputType:OptionType.InputType.TEXT,
+			fieldContext:'domain',
+			fieldGroup: 'advanced',
+		)
+		OptionType poolName = new OptionType(
+			name:'Pool Name',
+			code:'plugin.bigip.poolName',
+			fieldName:'poolName',
+			displayOrder:16,
+			fieldLabel:'Pool Name',
+			required:false,
+			inputType:OptionType.InputType.TEXT,
+			fieldContext:'domain',
+			fieldGroup: 'advanced',
+		)
+		OptionType serverName = new OptionType(
+			name:'Server Name',
+			code:'plugin.bigip.serverName',
+			fieldName:'serverName',
+			displayOrder:17,
+			fieldLabel:'Server Name',
+			required:false,
+			inputType:OptionType.InputType.TEXT,
+			fieldContext:'domain',
+			fieldGroup: 'advanced',
+
 		)
 
-		return [apiHost, apiPort, credential, username, password]
+		return [apiHost, apiPort, credential, username, password, managementUrl, allowManualVipEntry, vipPools, virtualName, poolName, serverName]
 	}
 
 	/**
