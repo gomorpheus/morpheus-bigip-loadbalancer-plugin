@@ -133,8 +133,8 @@ class BigIpProvider implements LoadBalancerProvider {
 			groupExpand: true
 		)
 		OptionType credential = new OptionType(
-			name:'credentials',
-			code:'plugin.bigio.credentials',
+			name:'Credentials',
+			code:'plugin.bigip.credentials',
 			fieldName:'type',
 			displayOrder:9,
 			defaultValue:'local',
@@ -145,7 +145,8 @@ class BigIpProvider implements LoadBalancerProvider {
 			config:JsonOutput.toJson(credentialTypes:['username-password']).toString(),
 			fieldGroup: 'connectionDetails',
 			fieldGroupI18nCode: 'gomorpheus.label.connectionDetails',
-			groupExpand: true
+			groupExpand: true,
+			'optionSource':'credentials'
 		)
 		OptionType username = new OptionType(
 			name:'Username',
@@ -1017,6 +1018,7 @@ class BigIpProvider implements LoadBalancerProvider {
 	@Override
 	ServiceResponse validate(NetworkLoadBalancer loadBalancer, Map opts) {
 		ServiceResponse response = ServiceResponse.prepare()
+		println "\u001B[33mAC Log - BigIpProvider:validate- ${loadBalancer.dump()}\u001B[0m"
 		response.data = loadBalancer
 		def apiUrl = getApiUrl(loadBalancer)
 		boolean hostOnline = false
@@ -4732,8 +4734,10 @@ class BigIpProvider implements LoadBalancerProvider {
 	}
 
 	protected getConnectionBase(NetworkLoadBalancer lb, Map opts = null) {
-		if (!lb.credentialLoaded)
-			morpheus.async.loadBalancer.loadLoadBalancerCredentials(lb)
+		if (!lb.credentialLoaded) {
+			def test = morpheus.async.loadBalancer.loadLoadBalancerCredentials(lb)
+		}
+
 
 		def connectionBase = [
 			url:"https://${lb.sshHost}:${lb.apiPort}",
