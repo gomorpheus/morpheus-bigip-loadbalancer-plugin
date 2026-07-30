@@ -1018,7 +1018,6 @@ class BigIpProvider implements LoadBalancerProvider {
 	@Override
 	ServiceResponse validate(NetworkLoadBalancer loadBalancer, Map opts) {
 		ServiceResponse response = ServiceResponse.prepare()
-		println "\u001B[33mAC Log - BigIpProvider:validate- ${loadBalancer.dump()}\u001B[0m"
 		response.data = loadBalancer
 		def apiUrl = getApiUrl(loadBalancer)
 		boolean hostOnline = false
